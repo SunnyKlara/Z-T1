@@ -1,11 +1,13 @@
-# Z-T1
+# CRITICAL T1 桌面级智能风洞
 
-桌面级智能风洞 — 1:64 微缩模型，桌上风速实验室。
+![CRITICAL T1 桌面级智能风洞](images/critical_t1_poster.jpg)
+
+> 融合超声波水雾发烟、AI辅助与独立APP智控，实现"声光电一体化"可视化流体实验体验。
 
 ## 项目结构
 
 ```
-Z-T1/
+CRITICAL-T1/
 ├── zcritical/    Flutter 应用 (ZCritical)
 │   ├── lib/
 │   └── pubspec.yaml

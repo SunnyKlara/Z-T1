@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════
+# Z-T1 Project — Git ignore rules
+# Covers: Flutter (zcritical/) + ESP-IDF (firmware/)
+# ═══════════════════════════════════════════════════
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+
+# ── IDE ──
+.idea/
+.vs/
+*.iml
+*.ipr
+*.iws
+
+# ── Flutter / Dart ──
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+build/
+/coverage/
+*.log
+
+# ── Android ──
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/.gradle/
+android/local.properties
+
+# ── iOS ──
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+
+# ── ESP-IDF ──
+firmware/**/build/
+firmware/**/.cache/
+firmware/**/sdkconfig.old
+firmware/**/dependencies.lock
+firmware/**/managed_components/
+
+# ── Kiro ──
+.kiro/settings/
+.kiro/hooks/
+.kiro/session-handoff.md

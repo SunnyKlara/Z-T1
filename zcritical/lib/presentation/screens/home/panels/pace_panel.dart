@@ -12,7 +12,6 @@ class PacePanel extends StatelessWidget {
       children: [
         SpeedRing(value: 65),
         SizedBox(height: 16),
-        FakeSlider(value: 0.65),
         SizedBox(height: 12),
         ModeButtons(modes: ['walk', 'jog', 'run'], active: 1),
       ],

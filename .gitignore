@@ -44,6 +44,9 @@ firmware/**/sdkconfig.old
 firmware/**/dependencies.lock
 firmware/**/managed_components/
 
+# ── Reference (RideWind, local only, not in git) ──
+reference/
+
 # ── Kiro ──
 .kiro/settings/
 .kiro/hooks/

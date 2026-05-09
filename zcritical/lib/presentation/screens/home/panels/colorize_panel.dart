@@ -1,5 +1,8 @@
-/// 职责：LED 颜色预设选择 — 胶囊条滚动 + 三角指示器 + 开始涂色动画
-/// 不做什么：不处理 RGB 调色、不处理 BLE 通信（Phase 2 接入）
+// ══════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=350 | scope=app | 修改前读 anti-bloat.md
+// ══════════════════════════════════════════════════════════════
+// 职责：LED 颜色预设选择 — 胶囊条滚动 + 三角指示器 + 开始涂色动画
+// 不做什么：不处理 RGB 调色、不处理 BLE 通信（Phase 2 接入）
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

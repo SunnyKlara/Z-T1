@@ -3,6 +3,7 @@
 > **优先级**: CRITICAL — 本文件是防止项目腐烂的最后防线。
 > **作用域**: 全局 — 固件端和 APP 端对话都必须遵守。
 > **铁律**: 任何对话中，本文件中的规则不可被"方便"或"快速"等借口覆盖。
+> **修订**: 2026-05-09 — 补充分支隔离、工作区隔离、提交隔离等硬规则（基于 B1 阶段实战教训）
 
 ---
 
@@ -16,19 +17,32 @@
   对话C ─── 架构讨论 (steering文档, 设计决策)
 
 每个对话的 AI 共享同一份文件系统，但各自独立运行。
+Git 仓库是同一个（C:\Users\Klara\Desktop\5.5\），只有一个 HEAD。
 ```
 
 ---
 
 ## 二、冲突风险清单
 
-| 风险 | 严重程度 | 描述 |
-|------|---------|------|
-| **协议契约冲突** | 🔴 致命 | 两端对同一命令理解不同 |
-| **LED预设不一致** | 🔴 致命 | 固件14种颜色与APP14种颜色不同 |
-| **steering 文件并发修改** | 🟡 严重 | 两端同时编辑同一个 steering 文件 |
-| **命名不一致** | 🟡 严重 | 固件用 `setLED`，APP用 `setLed` |
-| **状态管理冲突** | 🟡 严重 | 固件的 AppState 字段改了，APP 不知道 |
+### 已发生的（教训）
+
+| # | 风险 | 严重程度 | 发生时间 | 描述 |
+|---|------|---------|---------|------|
+| 1 | **分支混乱** | 🔴 致命 | 2026-05-09 | AI 启动时不检查分支，在 app/ 分支上开发固件 |
+| 2 | **工作区污染** | 🔴 致命 | 2026-05-09 | untracked 文件跨分支残留，两端互相干扰 |
+| 3 | **提交范围越界** | 🔴 致命 | 未发生 | git add . 会把两端改动混在一次提交 |
+| 4 | **未提交就结束** | 🔴 致命 | 未发生 | 代码写完了没 commit，另一个对话看不到 |
+| 5 | **stash 堆积** | 🟡 严重 | 已存在 | 3个 stash 无人清理，不知道哪个是有效的 |
+
+### 预设的（还没发生但会发生的）
+
+| # | 风险 | 严重程度 | 描述 |
+|---|------|---------|------|
+| 6 | 协议契约冲突 | 🔴 致命 | 两端对同一命令理解不同 |
+| 7 | LED预设不一致 | 🔴 致命 | 固件14种颜色与APP14种颜色不同 |
+| 8 | main 分支 merge conflict | 🟡 严重 | 两端各自合入 main 时冲突 |
+| 9 | steering 文件并发修改 | 🟡 严重 | 两端同时编辑同一个 steering 文件 |
+| 10 | 构建产物泄露 | 🟡 严重 | .gitignore 可能漏掉 managed_components 残渣等 |
 
 ---
 
@@ -68,12 +82,32 @@ hardware-config.md = 所有硬件参数的唯一来源
 
 | 范围 | 可修改 | 不可修改 | 修改后需同步 |
 |------|--------|---------|------------|
-| 固件端 | `firmware/**/*.c`, `*.h` | `zcritical/` | `protocol-contract.md` |
+| 固件端 | `firmware/**/*.c`, `*.h`, `*.yml` | `zcritical/` | `protocol-contract.md` |
 | APP端 | `zcritical/lib/**/*.dart` | `firmware/` | `protocol-contract.md` |
 | 两者 | 全部 | — | 全部 |
 | 文档 | `steering/**/*.md` | — | 全部 |
 
-### 铁律 3: 协议变更必须标记为 PENDING
+### 铁律 4: AI 启动对话时必须做 Git 自检
+
+> ⚠️ 这条是 2026-05-09 新增的，因为之前漏掉了。
+
+AI 在收到第一条开发指令后，**在写任何代码之前**，必须执行：
+
+```bash
+git branch --show-current        # 确认当前分支
+git status --porcelain           # 确认工作区干净
+```
+
+**结果判断：**
+
+| 场景 | 处理 |
+|------|------|
+| 当前分支前缀与工作范围不匹配 | 立刻 `git checkout` 到正确分支 |
+| 工作区有其他域的 untracked 文件 | 警告用户：有其他会话的未提交文件，建议先处理 |
+| 工作区有已修改但未提交的文件 | 确认是否属于当前会话，不属于则建议 stash 或 commit |
+| 有未关联当前任务的 stash | 提醒用户清理 |
+
+### 铁律 5: 协议变更必须标记为 PENDING
 
 ```
 修改 protocol-contract.md 添加新命令时：
@@ -85,7 +119,106 @@ hardware-config.md = 所有硬件参数的唯一来源
 
 ---
 
-## 四、⚠️ 硬约束机制
+## 四、⚠️ Git 分支隔离（2026-05-09 新增）
+
+### 硬规则 1: 分支前缀匹配
+
+| 对话类型 | 只能在这些分支上工作 |
+|---------|-------------------|
+| 固件开发 | `firmware/*` |
+| APP 开发 | `app/*` |
+| 协议变更 | `protocol/*` |
+| 文档/steering | `steering/*` 或 `main` |
+
+**每次对话开始时**，AI 必须 `git checkout` 到对应分支。如果分支不存在，AI 必须先创建。
+
+### 硬规则 2: 提交范围隔离
+
+```
+❌ 禁止: git add .                   # 会把两端改动混在一起
+❌ 禁止: git add filename/           # 模糊路径
+❌ 禁止: git commit -a               # 提交所有 tracked 文件的修改
+
+✅ 必须: git add firmware/zcritical-esp/main/core/hal/hal_gpio.c  # 逐个文件
+✅ 必须: git add firmware/zcritical-esp/main/core/hal/  # 仅当目录下全部是当前对话的文件
+```
+
+**每次提交前验证：**
+
+```bash
+git diff --cached --name-only   # 确认暂存区只有当前对话域的文件
+git status --short               # 确认没有遗漏或多余的改动
+```
+
+如果暂存区出现另一端的文件 → **立刻取消**，重新 add。
+
+### 硬规则 3: 对话结束必须提交
+
+```
+❌ 禁止: 写完了代码但没 commit 就结束对话
+❌ 禁止: "用户自己会提交的" — 用户可能忘记
+
+✅ 必须: commit 并推送到远程，或至少 commit 到本地
+✅ 必须: 更新 session-handoff.md 并一同提交
+✅ 必须: 输出合规检查报告
+```
+
+**提交消息格式：**
+
+```
+feat(fw): B1 HAL 驱动完成 — GPIO/PWM/LED/LCD/Encoder/Audio
+
+- 6个HAL驱动全部实现并编译通过
+- 引脚严格使用 hardware-config.md 唯一真值源
+- 新增 espressif/led_strip v2.5.5 依赖
+- 修复 sdkconfig.defaults 中过时的 LCD_IO_SPI_MODE 配置
+```
+
+### 硬规则 4: stash 只能作为临时工具
+
+```
+✅ stash 用于: 临时保存当前工作以便切换分支
+❌ stash 不能: 长期保存、跨对话传递、作为"草稿箱"
+
+规则:
+- 每个对话结束时，stash 列表应该是空的
+- 如果有 stash，要么 pop 恢复并提交，要么 drop 删除
+- stash 数量 ≥ 2 时，AI 必须提醒用户清理
+```
+
+---
+
+## 五、⚠️ 工作区隔离（2026-05-09 新增）
+
+### 问题根因
+
+```
+同一个 Git 仓库，多个对话同时开发，untracked 文件不受分支切换影响。
+
+对话A（固件）: 创建了 firmware/zcritical-esp/main/core/hal/ （untracked）
+对话B（APP）:  创建了 zcritical/lib/presentation/providers/ （untracked）
+                        ↓
+你切到 firmware/b1-hal → APP 的 untracked 文件还在
+你切到 app/a3-ble-connect   → 固件的 untracked 文件还在
+                        ↓
+两边对话都看到不属于自己的文件 → 混乱
+```
+
+### 对策：AI 必须忽略不属于自己域的文件
+
+| 对话类型 | AI 只能关注这些文件 | 对其他文件视为"不存在" |
+|---------|-------------------|---------------------|
+| 固件开发 | `firmware/zcritical-esp/` 下的 `.c`, `.h`, `CMakeLists.txt`, `*.yml` | `zcritical/` 下的所有文件 |
+| APP 开发 | `zcritical/lib/` 下的 `.dart` | `firmware/` 下的所有文件 |
+| 文档 | `steering/` 下的 `.md` | 应用代码文件 |
+
+### 对策：`.gitignore` 不解决这个问题
+
+`.gitignore` 只控制哪些文件不进入版本控制。它**不能**控制 `git status` 的显示，也不能阻止 untracked 文件出现在工作区。隔离只能靠 AI 自觉 + 流程约束。
+
+---
+
+## 六、⚠️ 硬约束机制
 
 > **以下不是建议，是规则。违反 = 出错。**
 
@@ -101,13 +234,18 @@ hardware-config.md = 所有硬件参数的唯一来源
   [文件名] [行数]/[上限] [✅/❌]
 
 架构边界:
-  [x] presentation/ 未 import data/
-  [x] drivers/ 未 import ui/
+  [x] hal/ 未 depend modules/
+  [x] modules/ 之间未互相 depend
   [ ] ❌ 问题: [描述]
 
 协议一致性:
   [x] LED 预设数量: 14 (与固件一致)
   [x] BLE 命令格式: 与 protocol-contract.md 一致
+
+Git 隔离:
+  [x] 当前分支: firmware/b1-hal （与工作范围匹配）
+  [x] 暂存区仅含固件端文件
+  [x] 无其他端的 untracked 文件混入
 
 决策:
   [放行 / 需要修复后重新提交]
@@ -166,7 +304,7 @@ APP对话   → 更新 zcritical/.kiro/session-handoff.md
 
 ---
 
-## 五、⚠️ 防 AI 偏离机制
+## 七、⚠️ 防 AI 偏离机制
 
 ### 问题：AI 在多轮对话后会偏离去向
 
@@ -179,7 +317,13 @@ APP对话   → 更新 zcritical/.kiro/session-handoff.md
 
 ### 对策：每次对话开始时强制读取核心文件
 
-*(见上文已更新列表)*
+AI 必须读取：
+1. `steering/specs/project-overview.md` — 项目总览
+2. 对应端的 `session-handoff.md` — 当前阶段和任务
+3. 对应端的 `anti-bloat.md` — 行数 + 架构约束
+4. `steering/specs/hardware-config.md` — 引脚参数
+5. `steering/specs/protocol-contract.md` — 协议格式
+6. **本文件** — 多会话协作规则
 
 ### 对策：问题-解决方案映射表
 
@@ -192,6 +336,10 @@ APP对话   → 更新 zcritical/.kiro/session-handoff.md
 | AI 犯迷糊不认错 | 坚持技术合伙人定位 | `ai-proactive-guidance.md` |
 | 协议格式不统一 | 协议契约是唯一真值源 | `protocol-contract.md` |
 | 对话上下文丢失 | 更新 session handoff | `session-handoff.md` |
+| **AI 在错误分支上开发** | Git 自检（铁律4） | **本文件** |
+| **两端文件互相污染** | 工作区隔离（第五节） | **本文件** |
+| **提交包含另一端文件** | 提交隔离（第四节硬规则2） | **本文件** |
+| **写完了没 commit** | 强制提交（第四节硬规则3） | **本文件** |
 
 ### 对策：文件头约束声明是 AI 的"护栏"
 
@@ -205,7 +353,7 @@ APP对话   → 更新 zcritical/.kiro/session-handoff.md
 
 ---
 
-## 六、冲突时的解决原则
+## 八、冲突时的解决原则
 
 ### 协议理解冲突
 
@@ -224,17 +372,46 @@ APP对话   → 更新 zcritical/.kiro/session-handoff.md
 只有 protocol-contract.md 可能同时被改 → Git 冲突时手动合并。
 ```
 
+### 分支合并冲突
+
+```
+两端先后合入 main 时：
+  1. 先合固件分支 → 固件是硬件真值源
+  2. 再合 APP 分支 → APP 基于固件已确认的格式
+  3. steering 文件冲突 → 保留两边修改，手动合并
+  
+合入顺序不能反。
+```
+
 ---
 
-## 七、对话结束时的标准收尾
+## 九、对话结束时的标准收尾
 
 每个对话结束时，AI 必须自动执行：
 
-1. ✅ 输出合规检查报告
-2. ✅ 更新对应域的 `session-handoff.md`
-3. ✅ 如果有协议变更，确认 `protocol-contract.md` 已更新
-4. ✅ 提交代码（如适用）
+1. ✅ **检查分支** — 确认当前在正确分支上
+2. ✅ **输出合规检查报告**（包含 Git 隔离检查）
+3. ✅ **更新对应域的 `session-handoff.md`**
+4. ✅ **提交代码** — `git add` 逐个文件 + `git commit`
+5. ✅ 如果有协议变更，确认 `protocol-contract.md` 已更新
+6. ✅ **清理 stash** — 如果有本对话产生的 stash，确认已处理
 
 ---
 
-*创建日期: 2026-05-08 | 基于 RideWind "各做各的，最后混乱" 的教训*
+## 十、对话启动时的标准流程（2026-05-09 新增）
+
+```
+第1步: 读取 project-overview.md
+第2步: 读取本文件（multi-session-collaboration.md）
+第3步: 读取对应端的 session-handoff.md
+第4步: git branch --show-current → 确认与工作范围匹配
+第5步: git status --porcelain → 确认工作区干净
+第6步: 如果不满足 → 切换分支 / 提醒用户 / 清理工作区
+第7步: 开始工作
+```
+
+**如果第4-6步有异常 → AI 必须先处理，不能跳过。**
+
+---
+
+*创建日期: 2026-05-08 | 修订: 2026-05-09（补充分支隔离、工作区隔离、提交隔离等 8 条硬规则，来源：B1 HAL 阶段实战教训）*

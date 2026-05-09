@@ -1,8 +1,8 @@
-# ⚠️ 已知坑位清单（RideWind 踩过的坑）
+# ⚠️ 已知坑位清单（RideWind 踩过的坑 + ZCritical 开发事故）
 
-> **优先级**: CRITICAL — 每个坑都对应一个真实 bug
+> **优先级**: CRITICAL — 每个坑都对应一个真实 bug 或一次事故
 > **用途**: 新对话 AI 必须读取此文件，避免重复踩坑
-> **创建**: 2026-05-08
+> **创建**: 2026-05-08 | **修订**: 2026-05-09（新增开发流程/工具层事故）
 
 ---
 
@@ -262,4 +262,58 @@ for (int retry = 0; retry < 10; retry++) {
 
 ---
 
-*每个坑都对应一个真实 bug，开发时必须对照检查*
+### 坑 16：多会话分支混乱（⚠️ 2026-05-09 事故）
+
+**现象**：固件对话 AI 在 `app/a3-ble-connect` 分支上开发了固件代码。两个对话（固件端和 APP 端）共用同一个 Git 仓库，但 AI 没有检查当前分支就直接开始写代码。
+
+**根因**：
+1. AI 启动时没有执行 `git branch --show-current` 检查分支
+2. 上一个对话结束时切换了分支，但当前对话的 AI 不知道
+3. 多会话协作规范缺少"分支隔离"硬规则
+
+**解决方案**（已落地到 `multi-session-collaboration.md`）：
+- AI 启动时必须 Git 自检 → 分支不匹配时立刻切换
+- 固件对话只能在 `firmware/*` 分支，APP 对话只能在 `app/*` 分支
+- 对话结束必须提交，不留工作区残留
+
+**验收**：新对话启动 → AI 自动检查分支 → 匹配则继续，不匹配则切换。
+
+---
+
+### 坑 17：fsWrite 路径写入错误（⚠️ 2026-05-09 事故）
+
+**现象**：AI 使用 `fsWrite` 工具创建了 12 个 HAL 文件（hal_gpio.c/h 等），之后编译通过，但实际文件未出现在正确目录下。检查发现 `main/core/hal/` 目录不存在，文件全部丢失。
+
+**根因**：
+1. `fsWrite` 工具接受相对路径，但路径解析基准点（workspace root）可能和预期不一致
+2. AI 写完后只验证了编译，没有验证文件是否真的在磁盘上
+3. 编译通过了可能是因为 ninja/cmake 缓存了之前的构建中间产物，掩盖了源文件丢失
+
+**解决方案**：
+- AI 写完文件后必须立即用 `Get-ChildItem` 或 `readFile` 验证文件存在
+- 必须在编译前验证目录结构正确
+- 不能仅凭"编译通过"就认为文件没问题 — 构建系统可能有缓存
+
+**验收**：写完文件 → `Test-Path` 确认 → 编译 → 再次 `Test-Path` 确认。
+
+---
+
+### 坑 18：Git CWD 和仓库根不一致（⚠️ 2026-05-09 事故）
+
+**现象**：AI 在 `firmware/zcritical-esp` 目录下执行 `git add main/core/hal/`，报错 `pathspec did not match any files`。但文件确实存在于该 CWD 下。
+
+**根因**：
+1. 虽然 CWD 是 `firmware/zcritical-esp`，但 Git 仓库根在 `C:\Users\Klara\Desktop\5.5`
+2. Git 始终使用仓库相对路径，CWD 只影响 shell 命令的路径解析
+3. AI 混淆了 shell CWD 和 Git 仓库根的概念
+
+**解决方案**：
+- AI 操作 Git 时必须先 `git rev-parse --show-toplevel` 确认仓库根
+- 所有 `git add` 使用仓库相对路径，例如 `firmware/zcritical-esp/main/core/hal/hal_gpio.c`
+- 或者使用 `git -C <repo_root>` 显式指定仓库路径
+
+**验收**：`git add firmware/zcritical-esp/main/core/hal/hal_gpio.c` → 成功。
+
+---
+
+*每个坑都对应一个真实 bug 或事故，开发时必须对照检查*

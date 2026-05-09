@@ -35,7 +35,7 @@ Z-T1/
 │   │   │   ├── fan/           → 风扇 + 油门
 │   │   │   ├── led/           → LED 预设 + 特效
 │   │   │   ├── display/       → LCD UI 渲染
-│   │   │   ├── audio/         → 引擎合成 + 播放
+│   │   │   ├── audio/         → MP3引擎样本 + I2S播放 (方案B)
 │   │   │   ├── encoder/       → 编码器事件
 │   │   │   ├── logo/          → Logo 上传 + 存储
 │   │   │   └── wifi/          → WiFi 音频流
@@ -144,12 +144,15 @@ Z-T1/
 - [x] Colorize Panel
 - [x] RGB Panel
 - [x] HomePageView (4 面板滑动)
-- [ ] Drawer (☰ 菜单)
-- [ ] User Center
-- [ ] Logo Management
-- [ ] Splash + Onboarding
-- [ ] BLE 连接层
-- [ ] 协议层
+- [x] Splash Screen + Onboarding (3页引导)
+- [x] HomeShell + Drawer (☰ 菜单)
+- [x] User Center (分区标题 + tile 列表)
+- [x] Logo Management (槽位预览 + 上传引导)
+- [x] BLE Provider 层 (status/scan/connection)
+- [x] BLE Connection Banner
+- [ ] BLE data 层实现 (ble_service / 扫描 / 连接)
+- [ ] 协议解析层 (protocol_parser / command_builder)
+- [ ] 面板数据绑定 (Provider ← data 层)
 
 ### 固件端 (zcritical-esp, 白板重建)
 - [ ] B0: 可编译空壳 — 待开始
@@ -174,7 +177,8 @@ steering/
 │   ├── project-overview.md           ← 📋 文档治理中心
 │   ├── hardware-config.md            ← 🔧 硬件参数唯一真值源
 │   ├── protocol-contract.md          ← 📡 协议唯一真值源
-│   └── ui-design-tokens.md           ← 🎨 UI 设计令牌
+│   ├── ui-design-tokens.md           ← 🎨 UI 设计令牌
+│   └── product-requirements-audit.md ← 📊 产品功能审计 + 方案选型
 │
 ├── roadmap/         ← 路线图（阶段规划）
 │   └── global-development-roadmap.md ← 🗺️ 全局开发路线图

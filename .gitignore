@@ -51,3 +51,21 @@ reference/
 .kiro/settings/
 .kiro/hooks/
 .kiro/session-handoff.md
+
+# ── Build artifacts (防止构建产物泄露) ──
+*.o
+*.obj
+*.elf
+*.bin
+*.map
+*.d
+*.su
+*.pyc
+__pycache__/
+*.bak
+*.swp
+*~
+
+# ── ESP-IDF managed components (IDF组件管理器下载的) ──
+firmware/**/managed_components/
+firmware/**/dependencies.lock

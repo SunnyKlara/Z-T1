@@ -27,7 +27,7 @@ class Device {
   final String? manufacturerName;
 
   /// 当前连接状态。
-  final ConnectionState connectionState;
+  final DeviceConnectionState connectionState;
 
   /// 上次接收到数据的时间戳。
   final DateTime? lastSeenAt;
@@ -37,7 +37,7 @@ class Device {
     required this.name,
     this.rssi = -100,
     this.manufacturerName,
-    this.connectionState = ConnectionState.disconnected,
+    this.connectionState = DeviceConnectionState.disconnected,
     this.lastSeenAt,
   });
 
@@ -62,7 +62,7 @@ class Device {
     String? name,
     int? rssi,
     String? manufacturerName,
-    ConnectionState? connectionState,
+    DeviceConnectionState? connectionState,
     DateTime? lastSeenAt,
     bool clearManufacturerName = false,
   }) {
@@ -78,7 +78,7 @@ class Device {
   }
 
   /// 更新连接状态（便捷方法）。
-  Device withConnectionState(ConnectionState state) => copyWith(
+  Device withConnectionState(DeviceConnectionState state) => copyWith(
         connectionState: state,
         lastSeenAt: state.isConnected ? DateTime.now() : lastSeenAt,
       );

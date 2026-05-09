@@ -152,8 +152,8 @@ Z-T1/
 - [ ] 协议层
 
 ### 固件端 (zcritical-esp, 白板重建)
-- [ ] B0: 可编译空壳 — 待开始
-- [ ] B1: HAL 驱动 (LCD/LED/Encoder/Fan/Humidifier/Audio) — 待开始
+- [x] B0: 可编译空壳 — ✅ 完成
+- [x] B1: HAL 驱动 (LCD/LED/Encoder/Fan/Humidifier/Audio) — ✅ 编译通过, 待实机验证
 - [ ] B2: BLE 协议层 — 待开始
 - [ ] B3: 功能模块 — 待开始
 

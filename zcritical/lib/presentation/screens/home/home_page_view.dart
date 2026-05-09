@@ -1,5 +1,9 @@
-// 首页下半部分 PageView 入口
-/// 不做什么：不包含任何面板的具体实现，每个面板独立文件
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=50 | scope=app-presentation | 修改前读 anti-bloat.md
+//
+// 职责: 首页下半部分 PageView 入口 — 4 个面板水平滑动
+// 不做什么: 不包含任何面板的具体实现
+// ══════════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'panels/pace_panel.dart';
 import 'panels/running_panel.dart';

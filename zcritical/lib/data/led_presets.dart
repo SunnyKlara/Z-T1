@@ -1,6 +1,10 @@
-/// 职责：14 种 LED 颜色预设数据模型与列表
-/// 不做什么：不处理 BLE 通信，不包含 UI 逻辑
-/// 真源：firmware/ridewind-esp/main/config/preset_colors.h
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=350 | scope=app-data | 修改前读 anti-bloat.md
+//
+// 职责: 14 种 LED 颜色预设数据模型与列表
+// 不做什么: 不处理 BLE 通信、不包含 UI 逻辑
+// 真源: steering/specs/protocol-contract.md 第四章
+// ══════════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 
 class LEDPreset {

@@ -1,5 +1,9 @@
-/// 职责：金属分段式 RGB 滑条 — 25 段 LED 灯带风格 + 数值手动输入
-/// 不做什么：不管理颜色状态，由调用方传入 value 和 onChanged
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=200 | scope=app-presentation | 修改前读 anti-bloat.md
+//
+// 职责: 金属分段式 RGB 滑条 — 25 段 LED 灯带风格 + 数值手动输入
+// 不做什么: 不管理颜色状态，由调用方传入 value 和 onChanged
+// ══════════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

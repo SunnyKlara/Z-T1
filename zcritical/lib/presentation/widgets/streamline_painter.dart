@@ -1,5 +1,9 @@
-/// 职责：风洞烟雾流线 Painter — 6条丝带绕中央数字 cos 半波弧形绕行
-/// 不做什么：不处理任何手势或状态，纯绘制
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=150 | scope=app-presentation | 修改前读 anti-bloat.md
+//
+// 职责: 风洞烟雾流线 CustomPainter — cos 半波弧形绕行
+// 不做什么: 不处理手势或状态，纯绘制
+// ══════════════════════════════════════════════════════════════════
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';

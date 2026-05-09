@@ -1,8 +1,8 @@
 // ══════════════════════════════════════════════════════════════
 // STEER: 反臃肿 | max_lines=350 | scope=app | 修改前读 anti-bloat.md
 // ══════════════════════════════════════════════════════════════
-/// 职责：RGB 调色面板 — L/M/R/B 四区胶囊 + 流水灯速度 + 详细调色 + 亮度
-/// 不做什么：不处理 BLE 通信（Phase 2 接入），不包含预设选择（由 ColorizePanel 负责）
+// 职责：RGB 调色面板 — L/M/R/B 四区胶囊 + 流水灯速度 + 详细调色 + 亮度
+// 不做什么：不处理 BLE 通信（Phase 2 接入），不包含预设选择（由 ColorizePanel 负责）
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zcritical/presentation/widgets/metallic_rgb_slider.dart';

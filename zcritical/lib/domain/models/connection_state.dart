@@ -1,8 +1,9 @@
-// ZCritical 连接状态枚举
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=40 | scope=app-domain | 修改前读 anti-bloat.md
 //
-// 设计意图：
-// - BLE 连接的生命周期状态。所有 Provider 和 UI 统一使用此枚举判断连接状态。
-// - 纯 Dart 枚举，零依赖。domain 层可直接使用。
+// 职责: BLE 连接状态枚举 — disconnected/connecting/connected/disconnecting
+// 不做什么: 不包含连接逻辑，不依赖 Flutter
+// ══════════════════════════════════════════════════════════════════
 // - 提供 isConnected / isBusy 便捷 getter，避免 UI 层写复杂的 switch 判断。
 //
 // 不做什么：

@@ -1,5 +1,9 @@
-/// 职责：倒三角指示器 CustomPainter — SVG 圆角梯形 + 多层发光
-/// 不做什么：不管理状态，不处理交互
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=100 | scope=app-presentation | 修改前读 anti-bloat.md
+//
+// 职责: 倒三角指示器 CustomPainter — SVG 圆角梯形 + 多层发光
+// 不做什么: 不管理状态，不处理交互
+// ══════════════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 
 class TriangleIndicatorPainter extends CustomPainter {

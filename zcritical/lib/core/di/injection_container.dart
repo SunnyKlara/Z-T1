@@ -1,18 +1,9 @@
-// ZCritical 依赖注入配置
+// ══════════════════════════════════════════════════════════════════
+// STEER: 反臃肿 | max_lines=200 | scope=app-core | 修改前读 anti-bloat.md
 //
-// 设计意图：
-// - 使用 GetIt 作为 Service Locator。所有 Repository / Service / DataSource 在此注册。
-// - 单例（Singleton）用于全局共享对象（BLE Service、Logger、SharedPreferences）。
-// - 工厂（Factory）用于每次请求新建的对象（UseCase、Provider 状态）。
-// - `init()` 在 `main()` 中调用一次。`sl<>()` 作为全局快捷访问。
-//
-// 不做什么：
-// - 不使用代码生成（injectable）。Flutter 3.41.6 缺少 _macros SDK。
-// - 不注册 UI 层对象（Provider / Screen）。UI 对象由 Riverpod 管理。
-//
-// 使用方式：
-// ```dart
-// // main() 中初始化
+// 职责: GetIt 依赖注入配置 — 注册 Repository/Service/DataSource 单例和工厂
+// 不做什么: 不使用代码生成（injectable）、不注册 UI 层对象（Provider/Screen）
+// ══════════════════════════════════════════════════════════════════
 // await InjectionContainer.init();
 //
 // // 任意位置获取

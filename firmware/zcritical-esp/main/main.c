@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=150 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=150 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: ESP32 固件入口 — 硬件初始化 + 主任务创建
  * 不做什么: 不包含命令分发（proto_dispatch.c）、不包含 Logo 上传（modules/logo/）

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=300 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=300 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: LEDC PWM 驱动 — 风扇 MOS 管调速 (IO40, CH2)
  * 不做什么: 不含速度映射、不含油门逻辑、不含风扇状态管理

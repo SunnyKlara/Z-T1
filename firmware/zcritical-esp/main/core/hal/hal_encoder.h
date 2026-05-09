@@ -1,7 +1,7 @@
 #pragma once
 
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=50 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=50 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: EC11 编码器驱动 — PCNT 旋转解码 + GPIO 按键检测
  * 不做什么: 不含事件分发逻辑、不含 UI 交互、不含菜单导航

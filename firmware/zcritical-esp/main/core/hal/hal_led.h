@@ -1,7 +1,7 @@
 #pragma once
 
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=50 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=50 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: WS2812B LED 驱动 — 2 条灯带 (RMT 外设)
  * 不做什么: 不含 LED 预设值、不含特效（呼吸/渐变/流水灯）、不含 UI 逻辑

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=300 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=300 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: WS2812B LED RMT 驱动 — 2 条灯带, 9 颗灯珠
  *        LED1(IO41, 6颗主灯) + LED2(IO16, 3颗尾灯)

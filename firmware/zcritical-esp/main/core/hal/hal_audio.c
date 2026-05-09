@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=300 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=300 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: I2S MAX98357 音频驱动 — Philips I2S, 44100Hz, 16-bit stereo
  * 不做什么: 不含音频合成、不含 MP3 解码、不含音频引擎逻辑

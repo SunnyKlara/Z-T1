@@ -1,7 +1,7 @@
 #pragma once
 
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=50 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=50 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: GC9A01 圆形 LCD SPI 驱动 — 初始化、像素绘制、区域填充、清屏
  * 不做什么: 不含 UI 逻辑、不含 framebuffer 管理策略、不含显示内容组合

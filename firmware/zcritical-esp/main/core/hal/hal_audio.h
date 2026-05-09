@@ -1,7 +1,7 @@
 #pragma once
 
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=30 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=30 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: I2S MAX98357 音频驱动 — 初始化、PCM 写入、音量控制
  * 不做什么: 不含音频合成、不含 MP3 解码、不含音频流管理

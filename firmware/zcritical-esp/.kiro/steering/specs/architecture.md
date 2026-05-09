@@ -72,7 +72,7 @@ core/hal/  →  （仅依赖 ESP-IDF SDK）
 | `hal_encoder.c` | EC11 编码器 | `encoder_poll()` → delta |
 | `hal_audio.c` | I2S MAX98357 | `audio_output(pcm, len)` |
 
-每文件 ≤ 300行。
+每文件参考 ~300 行，职责单一优先。
 
 ---
 
@@ -133,19 +133,43 @@ BLE 回调 (Core 0)
 
 ---
 
-## 六、硬约束
+## 六、核心约束
 
 | 约束 | 说明 |
 |------|------|
-| 每文件 ≤ 300行 (HAL) / 400行 (modules) | 硬限制 |
-| main.c ≤ 150行 | 只做初始化和任务创建 |
+| 行数参考值 | HAL ~300行 / modules ~400行 / main.c ~150行。**职责单一 > 行数**。逻辑清晰的500行好过强行拆分的3个碎片 |
 | 零行搬运 | 不从 reference 复制代码 |
 | 协议不可变 | BLE 命令格式与 reference 一致 |
 | 编译验证 | 每步 idf.py build 必须通过 |
 
+## 七、编译环境
+
+| 参数 | 值 |
+|------|-----|
+| ESP-IDF | v5.3.5 (`C:\Espressif\frameworks\esp-idf-v5.3.5`) |
+| Python | `C:\Espressif\python_env\idf5.3_py3.11_env\Scripts\python.exe` |
+| Toolchain | xtensa-esp-elf 13.2.0 (`C:\Espressif\tools\xtensa-esp-elf\esp-13.2.0_20250707`) |
+| CMake | 3.30.2 (`C:\Espressif\tools\cmake\3.30.2\bin`) |
+| Ninja | 1.12.1 (`C:\Espressif\tools\ninja\1.12.1`) |
+| 快捷构建 | `build_fw.bat build`（需在 ESP-IDF 环境变量已配好的终端中执行） |
+
+### 编译命令（手动指定路径）
+
+```powershell
+$env:IDF_PATH="C:\Espressif\frameworks\esp-idf-v5.3.5"
+$env:PATH="C:\Espressif\tools\cmake\3.30.2\bin;C:\Espressif\tools\ninja\1.12.1;C:\Espressif\tools\xtensa-esp-elf\esp-13.2.0_20250707\xtensa-esp-elf\bin;C:\Espressif\python_env\idf5.3_py3.11_env\Scripts;$env:PATH"
+python C:\Espressif\frameworks\esp-idf-v5.3.5\tools\idf.py build
+```
+
+### .h 文件 include 规则
+
+- 必须显式 `#include <stdint.h>` 和 `#include <stdbool.h>`（ESP-IDF gnu17 模式不自动提供）
+- 使用 `#include "esp_err.h"` 获取 `esp_err_t`
+- 不要包含 `<stdio.h>` 等标准库（IDE linter 可能报错但不影响 ESP-IDF 编译）
+
 ---
 
-## 七、硬件引脚配置（唯一真值源: `steering/hardware-config.md`）
+## 八、硬件引脚配置（唯一真值源: `steering/hardware-config.md`）
 
 | 外设 | 引脚 | 说明 |
 |------|------|------|

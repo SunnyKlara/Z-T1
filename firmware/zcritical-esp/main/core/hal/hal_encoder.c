@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=300 | scope=firmware | 修改前读 anti-bloat.md
+ * STEER: 反臃肿 | ref_lines=300 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: EC11 编码器驱动 — PCNT 旋转解码 + GPIO 按键状态机
  * 不做什么: 不含事件分发、不含 UI 导航、不含菜单逻辑

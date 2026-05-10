@@ -180,20 +180,29 @@ steering/
 │   ├── ui-design-tokens.md           ← 🎨 UI 设计令牌
 │   └── product-requirements-audit.md ← 📊 产品功能审计 + 方案选型
 │
-├── roadmap/         ← 路线图（阶段规划）
-│   └── global-development-roadmap.md ← 🗺️ 全局开发路线图
+├── decisions/       ← 技术决策录（避免重复讨论）
+│   ├── README.md                     ← 📋 决策索引 + 模板
+│   ├── DR-001-ble-protocol.md        ← BLE 通信协议方案
+│   ├── DR-002-audio-engine.md        ← 音频引擎方案
+│   └── DR-003-lcd-lvgl-migration.md  ← LCD UI → LVGL 迁移方案
 │
-├── guides/          ← 操作指南（如何做事）
-│   ├── ai-proactive-guidance.md      ← 🤖 AI 行为规范
+├── roadmap/
+│   ├── project-timeline.md             ← 🗺️ 带时间轴的开发路线图
+│   └── development-rhythm.md           ← 四圈迭代模型
+│
+├── guides/          ← 操作指南
+│   ├── START-HERE.md                  ← ⚠️ AI启动必读清单
+│   ├── ai-proactive-guidance.md       ← AI 行为规范
 │   ├── multi-session-collaboration.md ← 👥 多会话协作协议
 │   ├── naming-conventions.md         ← 🏷️ 软硬件统一命名
 │   ├── git-workflow.md               ← 🌿 Git 工作流
 │   ├── ux-guidelines.md              ← 📐 UX 指南
 │   └── ui-review-checklist.md        ← ✅ UI 评审清单
 │
-├── knowledge/       ← 参考知识（累积型）
-│   ├── known-pitfalls.md             ← ⚠️ 已知陷阱
-│   └── troubleshooting.md            ← 🩺 问题排查手册
+├── knowledge/
+│   ├── known-pitfalls.md             ← 已知陷阱(技术)
+│   ├── conversation-lessons.md       ← 对话教训(流程/方法论)
+│   └── troubleshooting.md
 │
 └── archived/        ← 📦 已归档（历史参考）
     ├── product-context.md

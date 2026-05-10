@@ -4,6 +4,7 @@
 // 职责: 首页下半部分 PageView 入口 — 4 个面板水平滑动
 // 不做什么: 不包含任何面板的具体实现
 // ══════════════════════════════════════════════════════════════════
+
 import 'package:flutter/material.dart';
 import 'panels/pace_panel.dart';
 import 'panels/running_panel.dart';

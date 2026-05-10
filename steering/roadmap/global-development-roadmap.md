@@ -146,7 +146,7 @@ Z-T1/
 
 | 规范项 | APP 端 (Dart) | 固件端 (C) |
 |--------|--------------|-----------|
-| **文件行数上限** | 350行(业务) / 500行(配置) | 300行(HAL) / 400行(modules) / 150行(main.c) |
+| **文件行数** | 参考350行(业务)/500行(配置)，可维护性优先 | 参考300行(HAL)/400行(modules)，可维护性优先 |
 | **架构模式** | Clean Architecture (core/domain/data/presentation) | core + modules 双区 |
 | **状态管理** | Riverpod Provider | app_state_t (子结构体) |
 | **路由** | GoRouter | ui_manager (UI 状态机) |

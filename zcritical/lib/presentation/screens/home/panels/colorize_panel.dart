@@ -1,8 +1,10 @@
 // ══════════════════════════════════════════════════════════════
-// STEER: 反臃肿 | max_lines=350 | scope=app | 修改前读 anti-bloat.md
+// STEER: 反臃肿 | scope=app | 修改前读 anti-bloat.md
+//
+// 职责: Colorize 预设面板 — 多条颜色胶囊水平滚动 + 三角指示器
+//       用 ListView 实现多胶囊同时可见（非 PageView 单页显示）
 // ══════════════════════════════════════════════════════════════
-// 职责：LED 颜色预设选择 — 胶囊条滚动 + 三角指示器 + 开始涂色动画
-// 不做什么：不处理 RGB 调色、不处理 BLE 通信（Phase 2 接入）
+
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,30 +19,61 @@ class ColorizePanel extends StatefulWidget {
 }
 
 class _ColorizePanelState extends State<ColorizePanel> {
+  final ScrollController _scrollController = ScrollController();
   int _selectedIndex = 0;
   bool _isSpinning = false;
-  double _indicatorOffset = 0.0;
-  double _bounceOffset = 0.0;
   double _bounceScale = 1.0;
-  late final PageController _pageController;
+  double _bounceOffset = 0.0;
+
+  // ── 响应式参数 ──
+  bool get _isSmallScreen =>
+      MediaQuery.of(context).size.height < 700 ||
+      MediaQuery.of(context).size.width < 375;
+
+  double get _capsuleWidth => _isSmallScreen ? 42.0 : 47.0;
+  double get _capsuleHeight => _isSmallScreen ? 135.0 : 153.0;
+  double get _capsuleMargin => _isSmallScreen ? 6.0 : 10.0;
+  double get _itemWidth => _capsuleWidth + _capsuleMargin * 2;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Color get _selectedColor => ledPresets[_selectedIndex].displayColor;
+  void _onScroll() {
+    if (_isSpinning || !_scrollController.hasClients) return;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final centerOffset = _scrollController.offset + screenWidth / 2 - _itemWidth / 2;
+    final index = (centerOffset / _itemWidth).round().clamp(0, ledPresets.length - 1);
+    if (index != _selectedIndex) {
+      setState(() => _selectedIndex = index);
+    }
+  }
 
-  // ═══════════════════════════════════════════════
-  //  Spinning 动画
-  // ═══════════════════════════════════════════════
+  Color _selectedColor() {
+    final idx = _selectedIndex.clamp(0, ledPresets.length - 1);
+    return ledPresets[idx].displayColor;
+  }
+
+  /// 将选中的胶囊滚动到屏幕中央
+  void _scrollToCenter(int index) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final targetOffset = index * _itemWidth - screenWidth / 2 + _itemWidth / 2;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    _scrollController.animateTo(
+      targetOffset.clamp(0.0, maxScroll),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
+  }
 
   Future<void> _toggleSpin() async {
     if (_isSpinning) {
@@ -48,144 +81,139 @@ class _ColorizePanelState extends State<ColorizePanel> {
       setState(() {});
       return;
     }
-
     _isSpinning = true;
     HapticFeedback.heavyImpact();
     setState(() {});
 
     final total = ledPresets.length;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final maxOffset = screenWidth * 0.5;
     int frame = 0;
 
     while (_isSpinning && mounted) {
       for (int i = 0; i < total; i += 3) {
         if (!_isSpinning || !mounted) return;
         final pos = i.clamp(0, total - 1);
-        final progress = pos / (total - 1);
-        final offset = maxOffset - progress * maxOffset * 2;
         frame++;
-        final bounceY = sin(frame * 0.8) * 25;
-        final bounceS = 1.0 + sin(frame * 0.6) * 0.15;
-
         setState(() {
-          _indicatorOffset = offset;
-          _bounceOffset = bounceY;
-          _bounceScale = bounceS;
           _selectedIndex = pos;
+          _bounceScale = 1.0 + sin(frame * 0.6) * 0.15;
+          _bounceOffset = sin(frame * 0.8) * 25;
         });
-
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(pos);
-        }
+        _scrollToCenter(pos);
         HapticFeedback.selectionClick();
         await Future.delayed(const Duration(milliseconds: 35));
       }
-
       for (int i = total - 1; i >= 0; i -= 3) {
         if (!_isSpinning || !mounted) return;
         final pos = i.clamp(0, total - 1);
-        final progress = pos / (total - 1);
-        final offset = maxOffset - progress * maxOffset * 2;
         frame++;
-        final bounceY = sin(frame * 0.8) * 25;
-        final bounceS = 1.0 + sin(frame * 0.6) * 0.15;
-
         setState(() {
-          _indicatorOffset = offset;
-          _bounceOffset = bounceY;
-          _bounceScale = bounceS;
           _selectedIndex = pos;
+          _bounceScale = 1.0 + sin(frame * 0.6) * 0.15;
+          _bounceOffset = sin(frame * 0.8) * 25;
         });
-
-        if (_pageController.hasClients) {
-          _pageController.jumpToPage(pos);
-        }
+        _scrollToCenter(pos);
         HapticFeedback.selectionClick();
         await Future.delayed(const Duration(milliseconds: 35));
       }
     }
-
-    if (mounted) {
-      setState(() {
-        _isSpinning = false;
-        _indicatorOffset = 0;
-        _bounceOffset = 0;
-        _bounceScale = 1.0;
-      });
-    }
+    _isSpinning = false;
+    if (mounted) setState(() {});
   }
-
-  // ═══════════════════════════════════════════════
-  //  Build
-  // ═══════════════════════════════════════════════
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return LayoutBuilder(
-      builder: (context, constraints) {
-        final h = constraints.maxHeight;
-        final totalW = constraints.maxWidth;
-
-        // 响应式胶囊尺寸
-        final capsuleW = totalW < 360 ? 42.0 : (totalW > 428 ? 55.0 : 47.0);
-        final capsuleH = h < 700 ? 135.0 : (h > 900 ? 170.0 : 153.0);
-        final containerH = h < 700 ? 185.0 : (h > 900 ? 240.0 : 220.0);
-
-        // 三角指示器位置
-        final triTopOffset = capsuleH + 35;
-        final triLeftPosition = totalW / 2 - 14 + _indicatorOffset;
+      builder: (context, c) {
+        final totalH = c.maxHeight;
+        final btnH = 90.0;
+        final availH = totalH - btnH;
+        final capsuleAreaTop = ((availH - _capsuleHeight - 50) / 2).clamp(0.0, availH);
 
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            // 三角指示器
-            AnimatedPositioned(
-              duration: _isSpinning
-                  ? const Duration(milliseconds: 30)
-                  : const Duration(milliseconds: 150),
-              top: (h - containerH) / 2 + triTopOffset - 10,
-              left: triLeftPosition,
-              child: CustomPaint(
-                size: const Size(28, 12),
-                painter: TriangleIndicatorPainter(
-                  isActive: true,
-                  currentColor: _selectedColor,
-                ),
-              ),
-            ),
-
-            // 胶囊条
+            // ── 颜色胶囊 ListView（多条同时可见）──
             Positioned(
-              top: (h - containerH) / 2 - 10,
-              left: 0,
-              right: 0,
-              height: capsuleH + 30,
-              child: PageView.builder(
-                controller: _pageController,
-                padEnds: true,
+              top: capsuleAreaTop,
+              left: 0, right: 0,
+              height: _capsuleHeight + 40,
+              child: ListView.builder(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
                 physics: _isSpinning
                     ? const NeverScrollableScrollPhysics()
                     : const BouncingScrollPhysics(),
-                onPageChanged: (i) {
-                  setState(() => _selectedIndex = i);
-                  HapticFeedback.selectionClick();
-                },
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth / 2 - _itemWidth / 2,
+                ),
                 itemCount: ledPresets.length,
-                itemBuilder: (context, index) =>
-                    _buildCapsule(index, capsuleW, capsuleH),
+                itemBuilder: (ctx, i) => _buildCapsule(i),
               ),
             ),
-
-            // 开始涂色按钮
+            // ── 三角指示器（固定在屏幕中央下方）──
             Positioned(
-              bottom: 16,
-              left: 24,
-              right: 24,
-              child: _StartColoringButton(
-                spinning: _isSpinning,
-                glowColor: _selectedColor,
-                onTap: _toggleSpin,
+              top: capsuleAreaTop + _capsuleHeight + 35,
+              left: screenWidth / 2 - 14,
+              child: SizedBox(
+                width: 28, height: 12,
+                child: CustomPaint(
+                  painter: TriangleIndicatorPainter(
+                    isActive: true,
+                    currentColor: _selectedColor(),
+                  ),
+                ),
+              ),
+            ),
+            // ── 底部按钮 ──
+            Positioned(
+              left: _isSmallScreen ? 15 : 20,
+              right: _isSmallScreen ? 10 : 15,
+              bottom: 6,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _toggleSpin,
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: const Color(0x14FFFFFF),
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(color: Colors.white.withAlpha(25)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            _isSpinning ? '点击停止' : '开始涂色',
+                            style: TextStyle(
+                              color: Colors.white.withAlpha(200),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: _isSmallScreen ? 6 : 8),
+                  GestureDetector(
+                    onTap: () => HapticFeedback.mediumImpact(),
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: 56, height: 56,
+                      decoration: BoxDecoration(
+                        color: const Color(0x14FFFFFF),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withAlpha(25)),
+                      ),
+                      child: const Icon(Icons.palette_outlined,
+                          color: Color(0xCCFFFFFF), size: 24),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -194,61 +222,46 @@ class _ColorizePanelState extends State<ColorizePanel> {
     );
   }
 
-  // ═══════════════════════════════════════════════
-  //  Capsule Item
-  // ═══════════════════════════════════════════════
-
-  Widget _buildCapsule(int index, double capsuleW, double capsuleH) {
+  Widget _buildCapsule(int index) {
     final preset = ledPresets[index];
-    final isSolid = preset.isSolid;
     final distance = (index - _selectedIndex).abs();
-
-    double brightness;
-    if (distance == 0) {
-      brightness = 1.0;
-    } else if (distance == 1) {
-      brightness = 0.7;
-    } else if (distance == 2) {
-      brightness = 0.5;
-    } else {
-      brightness = 0.3;
-    }
-
-    final double scale = distance == 0 ? 1.15 : 1.0;
-    final radius = capsuleW / 2;
-    final margin = 8.0;
+    final brightness = distance == 0
+        ? 1.0
+        : (distance == 1 ? 0.7 : (distance == 2 ? 0.5 : 0.3));
+    final scale = distance == 0 ? 1.15 : 1.0;
 
     return GestureDetector(
       onTap: () {
-        if (distance != 0 && !_isSpinning && _pageController.hasClients) {
-          _pageController.animateToPage(
-            index,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-          );
+        if (!_isSpinning) {
+          setState(() => _selectedIndex = index);
+          _scrollToCenter(index);
+          HapticFeedback.selectionClick();
         }
       },
       child: Center(
         child: Transform.translate(
-          offset: Offset(0, _isSpinning ? _bounceOffset : 0),
+          offset: Offset(
+            0,
+            _isSpinning ? (distance == 0 ? _bounceOffset : 0) : 0,
+          ),
           child: Transform.scale(
             scale: _isSpinning
                 ? (distance == 0 ? _bounceScale * 1.15 : _bounceScale)
                 : scale,
             child: Container(
-              width: capsuleW,
-              height: capsuleH,
-              margin: EdgeInsets.symmetric(horizontal: margin),
+              width: _capsuleWidth,
+              height: _capsuleHeight,
+              margin: EdgeInsets.symmetric(horizontal: _capsuleMargin),
               decoration: BoxDecoration(
-                color: isSolid ? preset.solidColor : null,
-                gradient: !isSolid
+                color: preset.isSolid ? preset.solidColor : null,
+                gradient: !preset.isSolid && preset.gradientColors != null
                     ? LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: preset.gradientColors!,
                       )
                     : null,
-                borderRadius: BorderRadius.circular(radius),
+                borderRadius: BorderRadius.circular(_capsuleWidth / 2),
                 boxShadow: distance == 0
                     ? [
                         BoxShadow(
@@ -257,7 +270,7 @@ class _ColorizePanelState extends State<ColorizePanel> {
                           offset: const Offset(0, 4),
                         ),
                         BoxShadow(
-                          color: preset.displayColor.withAlpha(89),
+                          color: _selectedColor().withAlpha(80),
                           blurRadius: 15,
                           spreadRadius: 1,
                         ),
@@ -272,76 +285,10 @@ class _ColorizePanelState extends State<ColorizePanel> {
               ),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(
-                    ((1.0 - brightness) * 255).round(),
-                  ),
-                  borderRadius: BorderRadius.circular(radius),
+                  color: Colors.black.withAlpha(((1.0 - brightness) * 255).round()),
+                  borderRadius: BorderRadius.circular(_capsuleWidth / 2),
                 ),
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-//  开始涂色按钮 — 代码绘制发光圆角矩形
-// ═══════════════════════════════════════════════════════════
-
-class _StartColoringButton extends StatelessWidget {
-  final bool spinning;
-  final Color glowColor;
-  final VoidCallback onTap;
-
-  const _StartColoringButton({
-    required this.spinning,
-    required this.glowColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 56,
-        decoration: BoxDecoration(
-          color: spinning
-              ? glowColor.withAlpha(20)
-              : Colors.white.withAlpha(8),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: spinning
-                ? glowColor.withAlpha(150)
-                : Colors.white.withAlpha(30),
-            width: 1.5,
-          ),
-          boxShadow: spinning
-              ? [
-                  BoxShadow(
-                    color: glowColor.withAlpha(60),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                  ),
-                  BoxShadow(
-                    color: glowColor.withAlpha(30),
-                    blurRadius: 40,
-                    spreadRadius: 4,
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Text(
-            spinning ? '✦ 停止 ✦' : '✦ 开始涂色 ✦',
-            style: TextStyle(
-              color: spinning ? glowColor : Colors.white.withAlpha(180),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 3,
             ),
           ),
         ),

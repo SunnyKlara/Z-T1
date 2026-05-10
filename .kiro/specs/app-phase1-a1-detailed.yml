@@ -1,0 +1,185 @@
+﻿# ZCritical APP — Phase 1 A1 应用入口 (详细版)
+# 提炼自: zcritical/.kiro/session-handoff.md + development-rhythm.md 第一圈
+# 当前阶段: 第一圈「体验原型」— Mock数据驱动
+
+spec:
+  name: "APP 应用入口 (A1) — Splash + Onboarding + HomeShell + Drawer"
+  short_name: "A1-入口"
+  description: >
+    实现ZCritical APP的完整启动入口流。用户首次打开APP→SplashScreen→Onboarding3页引导→HomeShell。
+    HomeShell内嵌GoRouter ShellRoute管理PageView面板，右上角☰按钮打开Drawer抽屉。
+    所有UI纯代码绘制，纯黑背景#000000，不使用任何图片资源。
+
+  context:
+    architecture: "Clean Architecture (core/domain/data/presentation)"
+    state_management: "Riverpod Provider"
+    router: "GoRouter ShellRoute"
+    design_system: "ui-design-tokens.md"
+    protocol: "protocol-contract.md"
+    rhythm: "第一圈: 体验原型 — Mock数据驱动，所有页面可走通"
+    branch: "app/splash-onboarding"
+
+  tasks:
+    - id: "A1-1"
+      file: "lib/core/router/app_router.dart"
+      title: "扩展路由 — 添加全部路由路径"
+      status: todo
+      priority: P0
+      depends_on: []
+      description: >
+        在已有的 app_router.dart 中扩展路由表。
+        新增: /splash, /onboarding, /user-center, /logo。
+        将 HomeScreen 改为 ShellRoute body。
+      changes:
+        - "在 RoutePaths 中新增 splash/onboarding/userCenter/logo 路径常量"
+        - "将 GoRouter 改为 ShellRoute(body: HomeShell)"
+        - "新增4个 GoRoute 条目"
+      constraints:
+        - "路由守卫留到 route_guards.dart（后续处理）"
+        - "max_lines: 已有149行"
+
+    - id: "A1-2"
+      file: "lib/app.dart"
+      title: "修改入口流 — Splash vs HomeShell 分支"
+      status: todo
+      priority: P0
+      depends_on: ["A1-1"]
+      description: >
+        修改 MaterialApp.router 之前，检查 isFirstLaunch 标记。
+        - 首次启动 → 导航到 /splash
+        - 非首次且已完成 Onboarding → 导航到 /
+      changes:
+        - "在 app.dart 中添加 isFirstLaunch 检测逻辑"
+        - "根据检测结果设置 GoRouter initialLocation"
+      constraints:
+        - "使用 SharedPreferences 存储 isFirstLaunch 和 onboardingCompleted"
+
+    - id: "A1-3"
+      file: "lib/presentation/screens/splash/splash_screen.dart"
+      title: "SplashScreen — 品牌展示+用户协议"
+      status: todo
+      priority: P0
+      depends_on: ["A1-1"]
+      description: >
+        启动闪屏页。纯代码绘制ZCritical品牌Logo + 风洞线框图形。
+        "开始使用"按钮 + 用户协议/隐私政策勾选框。
+        勾选协议后才能点按钮。点击后跳转 /onboarding。
+      design_params:
+        background: "Color(0xFF000000) 纯黑"
+        brand_logo: "代码绘制: 'ZCritical'文字(白色, 大号w800) + 风洞线框图形(CustomPainter)"
+        agreement_checkbox: "圆框(CircleBorder) + 红色内圆点(Colors.red) + 文字'我已阅读并同意'"
+        agreement_links: "蓝色可点击文字: '用户协议' | '隐私政策'"
+        button_text: "'开始使用'"
+        button_style: "白色背景, 黑色文字, 圆角29, 宽320高58, 17px/w600"
+        button_disabled: "未勾选协议时半透明+不可点击"
+        button_on_press: "Navigator.pushReplacementNamed('/onboarding')"
+        agreement_dialog: "点击链接→弹出对话框显示协议全文(硬编码文本)"
+      states:
+        normal: "Logo在中央, 协议勾选框下方, 按钮在最底部"
+        loading: "按钮变loading(白色CircularProgressIndicator)"
+      max_lines: 180
+
+    - id: "A1-4"
+      file: "lib/presentation/screens/onboarding/onboarding_screen.dart"
+      title: "OnboardingScreen — 3页引导"
+      status: todo
+      priority: P0
+      depends_on: ["A1-1"]
+      description: >
+        3页 PageView 滑动引导页。每页展示不同权限或完成说明。
+        底部3个横条指示器 + 下一步/开始探索按钮。
+        完成后标记 onboardingCompleted=true，跳转 HomeShell。
+      design_params:
+        background: "Color(0xFF000000) 纯黑"
+        title_style: "48px, w800, Colors.white"
+        description_style: "20px, w400, Colors.white70"
+        indicator_active: "短横条, 白色, 宽~16px, 高~4px, 圆角2"
+        indicator_inactive: "长横条, 白色30%透明, 宽~32px, 高~4px, 圆角2"
+        button_reuse: "复用SplashScreen按钮样式(320x58, 圆角29, 白底黑字)"
+        pages:
+          - index: 0
+            title: "允许通知权限"
+            description: "接收设备连接状态、固件更新等重要通知"
+            button_text: "下一步"
+          - index: 1
+            title: "允许附近设备权限"
+            description: "搜索并连接您的风洞设备，需要蓝牙权限"
+            button_text: "下一步"
+          - index: 2
+            title: "全部就绪！"
+            description: "一切准备就绪，开始探索您的桌面级智能风洞吧"
+            button_text: "开始探索"
+        on_complete: "SharedPreferences.setBool('onboardingCompleted', true) → Navigator.pushAndRemoveUntil('/', (route) => false)"
+      states:
+        normal: "PageView可滑动, 指示器同步更新"
+        final_page: "按钮文案变为'开始探索', 点击→标记完成→跳HomeShell"
+      max_lines: 150
+
+    - id: "A1-5"
+      file: "lib/presentation/screens/home/home_shell.dart"
+      title: "HomeShell — ShellRoute容器"
+      status: todo
+      priority: P0
+      depends_on: ["A1-1"]
+      description: >
+        GoRouter ShellRoute 的 body 容器。
+        Stack 布局: 底层主内容(PageView4面板) + 右上角☰按钮。
+        Scaffold+Drawer 集成。
+      design_params:
+        stack_layers:
+          - "底层: child(GoRouter body) — PageView 4面板"
+          - "顶层: Positioned(top: 16, right: 16) — ☰按钮"
+        menu_button: "56x56圆形, 白色10%半透明背景, Icons.menu(白色28px)"
+        menu_on_press: "Scaffold.of(context).openEndDrawer()"
+        drawer_position: "从右滑出(endDrawer, 非左侧)"
+        drawer_width: "280px"
+        drawer_background: "Color(0xFF000000) 纯黑"
+        ble_banner: "顶部细条(高40px), 未连接时显示'未连接设备 — 点击连接'(A3实现BLE逻辑)"
+        ble_banner_color: "Color(0x33FF0000) 半透明红色背景"
+      states:
+        connected: "Banner隐藏"
+        disconnected: "Banner显示, 半透明红色"
+      max_lines: 80
+
+    - id: "A1-6"
+      file: "lib/presentation/widgets/drawer_widget.dart"
+      title: "Drawer — 抽屉菜单"
+      status: todo
+      priority: P0
+      depends_on: ["A1-5"]
+      description: >
+        右侧滑出抽屉菜单。品牌区+导航入口。
+        连点版本号5次解锁开发者选项。
+      design_params:
+        sections:
+          - area: "品牌区"
+            content: "'ZCritical'文字(24px, w800, 白色) + 版本号'v1.0.0'(14px, white54)"
+            developer_unlock: "连点版本号5次 → 显示'开发者选项已启用'Toast → 在抽屉底部追加'🔧 开发者'入口"
+          - area: "导航"
+            items:
+              - "👤 用户中心 → /user-center"
+              - "🖼️ Logo管理 → /logo"
+          - area: "分隔线"
+            content: "1px白色10%不透明度"
+          - area: "预留"
+            content: "(后续扩展位)"
+      states:
+        normal: "品牌区+导航+分隔线"
+        developer_unlocked: "追加🔧开发者入口"
+      max_lines: 80
+
+  acceptance:
+    - "flutter analyze 零错误"
+    - "所有路由正确跳转: /→/splash→/onboarding→/→☰→/user-center→/logo"
+    - "Onboarding完成后再次启动直接进入HomeShell"
+    - "每文件有STEER块+职责声明+设计意图注释"
+    - "没有 import data/ 层（presentation层不应导入data层）"
+    - "所有UI四种状态（加载/空/错误/成功）完备"
+    - "输出合规检查报告"
+
+  completed_panels:
+    - "pace_panel.dart (236行) ✅ — 不修改"
+    - "running_panel.dart (359行) ✅ — 不修改"
+    - "colorize_panel.dart (315行) ✅ — 不修改（注意: 目前有跨层import data/led_presets.dart, 待A3 BLE接入时修复）"
+    - "rgb_panel.dart (345行) ✅ — 不修改"
+    - "home_page_view.dart (33行) ✅ — 不修改"

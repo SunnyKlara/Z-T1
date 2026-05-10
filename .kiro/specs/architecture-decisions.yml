@@ -1,0 +1,96 @@
+﻿# ZCritical 架构决策记录 (Decision Records)
+# 提炼自: steering/decisions/ + development-rhythm.md
+# 用途: 新AI不需要考古旧代码就能理解每个方案为什么这么选
+
+spec:
+  name: "架构决策记录"
+  description: >
+    记录ZCritical项目所有关键技术决策。
+    每个DR记录：为什么选这个方案、淘汰的方案是什么、影响范围。
+    新AI不需要从旧代码考古来推测设计意图。
+
+  context:
+    principle: "DR只在真正要动手前讨论，不提前批量生产（conversation-lessons #6）"
+    rhythm_map:
+      第一圈: "体验原型 → 已确认: DR-001(协议), DR-004(连接体验)待讨论"
+      第二圈: "通信联通 → 已确认: DR-001, 待确认: DR-004"
+      第三圈: "功能完善 → 需确认: DR-002(音频), DR-003(LVGL), DR-005(Logo), DR-006(LED), DR-007(编码器)"
+      第四圈: "打磨发布 → 需确认: DR-008(OTA), DR-009(看门狗), DR-010(诊断), DR-011(自检)"
+
+  tasks:
+    - id: DR-001
+      title: "BLE 协议方案"
+      file: "steering/decisions/DR-001-ble-protocol.md"
+      status: done
+      summary: "文本协议结尾, Service 0xFFE0/Char 0xFFE1, MTU 247"
+      applies_to: "第一圈 体验原型"
+
+    - id: DR-002
+      title: "音频引擎方案"
+      file: "steering/decisions/DR-002-audio-engine.md"
+      status: done
+      summary: "实时合成引擎 + WiFi音频流投射"
+      applies_to: "第三圈 功能完善"
+
+    - id: DR-003
+      title: "LCD + LVGL 迁移"
+      file: "steering/decisions/DR-003-lcd-lvgl-migration.md"
+      status: done
+      summary: "GC9A01 240×240 圆形 LCD + LVGL UI框架迁移"
+      applies_to: "第三圈 功能完善"
+
+    - id: DR-004
+      title: "BLE 连接体验设计"
+      file: "steering/decisions/DR-004-ble-connection.md"
+      status: todo
+      summary: "连接流程、重连策略、断开处理、错误提示文案"
+      applies_to: "第一圈/第二圈"
+
+    - id: DR-005
+      title: "Logo 上传方案"
+      file: "steering/decisions/DR-005-logo-upload.md"
+      status: todo
+      summary: "上传协议、PSRAM缓冲、CRC32校验、LittleFS存储、进度反馈"
+      applies_to: "第三圈 功能完善"
+
+    - id: DR-006
+      title: "LED 特效系统"
+      file: "steering/decisions/DR-006-led-effects.md"
+      status: todo
+      summary: "14种预设、动态特效、渐变过渡、流水灯、亮度控制"
+      applies_to: "第三圈 功能完善"
+
+    - id: DR-007
+      title: "编码器交互设计"
+      file: "steering/decisions/DR-007-encoder-interaction.md"
+      status: todo
+      summary: "旋转速度映射、长按短按行为、UI状态切换、加速度曲线"
+      applies_to: "第三圈 功能完善"
+
+    - id: DR-008
+      title: "OTA 固件升级"
+      file: "steering/decisions/DR-008-ota-update.md"
+      status: todo
+      summary: "OTA分区、BLE传输、CRC校验回滚、WiFi OTA备选"
+      applies_to: "第四圈 打磨发布"
+
+    - id: DR-009
+      title: "看门狗与系统监控"
+      file: "steering/decisions/DR-009-watchdog.md"
+      status: todo
+      summary: "硬件看门狗、任务看门狗、BLE连接看门狗(6秒)、异常重启恢复"
+      applies_to: "第四圈 打磨发布"
+
+    - id: DR-010
+      title: "诊断系统"
+      file: "steering/decisions/DR-010-diagnostics.md"
+      status: todo
+      summary: "硬件自检、BLE信号强度、错误日志、诊断命令"
+      applies_to: "第四圈 打磨发布"
+
+    - id: DR-011
+      title: "上电自检"
+      file: "steering/decisions/DR-011-self-test.md"
+      status: todo
+      summary: "LCD/LED/编码器/风扇/加湿器/音频/WiFi模块自检流程"
+      applies_to: "第四圈 打磨发布"

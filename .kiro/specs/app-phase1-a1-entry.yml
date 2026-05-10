@@ -1,0 +1,120 @@
+# ZCritical APP — Phase 1 A1 应用入口
+# 提炼自: zcritical/.kiro/session-handoff.md + development-rhythm.md 第一圈
+# 当前阶段: 第一圈「体验原型」
+
+spec:
+  name: "APP 应用入口 (A1)"
+  description: >
+    实现ZCritical APP的启动入口流：SplashScreen → Onboarding(3页) → HomeShell。
+    HomeShell内嵌GoRouter ShellRoute管理PageView面板 + Drawer抽屉。
+    所有UI用代码绘制，纯黑背景#000000，不使用图片。
+
+  context:
+    architecture: "Clean Architecture (core/domain/data/presentation)"
+    state_management: "Riverpod Provider"
+    router: "GoRouter"
+    design_system: "ui-design-tokens.md"
+    protocol: "protocol-contract.md"
+    rhythm: "第一圈: 体验原型 — Mock数据驱动"
+
+  tasks:
+    - id: A1-1
+      file: "lib/app.dart"
+      description: "修改入口流：isFirstLaunch → 决定 Splash 或 HomeShell"
+      status: todo
+      constraints:
+        - "flutter analyze 零错误"
+        - "有STEER块 + 职责声明"
+
+    - id: A1-2
+      file: "lib/core/router/app_router.dart"
+      description: "扩展路由：添加 /splash, /onboarding, /user-center, /logo, Shell route"
+      status: todo
+      constraints:
+        - "路由路径常量在 RoutePaths 抽象类中"
+        - "路由守卫后续在 route_guards.dart 实现"
+
+    - id: A1-3
+      file: "lib/presentation/screens/splash/splash_screen.dart"
+      description: >
+        品牌Logo(代码绘制"ZCritical"文字+风洞线框) + "开始使用"按钮 + 用户协议勾选
+      status: todo
+      design_params:
+        background: "Color(0xFF000000)"
+        brand_logo: "代码绘制 ZCritical 文字 + 风洞线框图形"
+        agreement: "圆框 + 红色内圆点 + 我已阅读并同意 + 链接文字(蓝色)"
+        button: "白底黑字, 圆角29, 宽320高58"
+        agreements_text: "硬编码文本, 弹窗展示"
+      max_lines: 180
+
+    - id: A1-4
+      file: "lib/presentation/screens/onboarding/onboarding_screen.dart"
+      description: "3页 PageView 引导：权限1 + 权限2 + 完成 → pushAndRemoveUntil → HomeShell"
+      status: todo
+      design_params:
+        title: "48号字, w800"
+        description: "20号字, 白色70%透明度"
+        indicator: "3个横条, 选中短条/未选中长条"
+        button_reuse: "复用SplashScreen样式(264行)"
+        page1: "允许通知权限"
+        page2: "允许附近设备权限"
+        page3: "全部就绪！按钮文案变为'开始探索'"
+        on_complete: "markOnboardingComplete() → pushAndRemoveUntil → HomeShell"
+      max_lines: 150
+
+    - id: A1-5
+      file: "lib/presentation/screens/home/home_shell.dart"
+      description: "GoRouter ShellRoute body + Stack(Positioned右上☰按钮) + Drawer"
+      status: todo
+      design_params:
+        layout: "Stack: 主内容 + Positioned(top-right) ☰按钮(56x56, 白色半透明圆形)"
+        drawer: "从右滑出, 黑色背景, 宽~280px"
+        ble_banner: "顶部细条, 未连接显示'未连接设备 — 点击连接'(A3实现)"
+      max_lines: 80
+
+    - id: A1-6
+      file: "lib/presentation/widgets/drawer_widget.dart"
+      description: "品牌区(logo+版本号, 连点5次解锁开发者) + 👤用户中心 + 🖼️Logo管理"
+      status: todo
+      design_params:
+        sections:
+          - "品牌区: ZCritical文字 + 版本号"
+          - "👤 用户中心 → /user-center"
+          - "🖼️ Logo管理 → /logo"
+          - "分隔线"
+          - "(预留扩展位)"
+        developer_unlock: "连点5次版本号解锁开发者选项"
+      max_lines: 80
+
+  completed_panels:
+    - "pace_panel.dart (236行) ✅"
+    - "running_panel.dart (359行) ✅"
+    - "colorize_panel.dart (315行) ✅"
+    - "rgb_panel.dart (345行) ✅"
+    - "home_page_view.dart (33行) ✅"
+
+  key_constants:
+    colors:
+      background: "Color(0xFF000000)"
+      primary: "Color(0xFF00BCD4)"
+      highlight: "Color(0xFF00E5FF)"
+      text: "Colors.white / Colors.white70"
+      button_bg: "Colors.white"
+      button_fg: "Colors.black"
+    fonts:
+      title_large: "48px, w800, letterSpacing -0.5"
+      description: "20px, w400, height 1.5"
+      button: "17px, w600"
+    routes:
+      splash: "/splash"
+      onboarding: "/onboarding"
+      home: "/"
+      user_center: "/user-center"
+      logo: "/logo"
+
+  acceptance:
+    - "flutter analyze 零错误"
+    - "每新文件 ≤ 上限行数"
+    - "新文件有STEER块 + 职责声明"
+    - "没有 import data/ 层"
+    - "输出合规检查报告"

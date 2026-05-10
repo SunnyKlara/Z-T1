@@ -1,0 +1,119 @@
+﻿# ZCritical 固件 — Phase 2 B1 HAL驱动
+# 提炼自: firmware/zcritical-esp/.kiro/session-handoff.md + development-rhythm.md 第一圈
+# 当前阶段: 第一圈「体验原型」
+
+spec:
+  name: "固件 HAL 驱动层 (B1)"
+  description: >
+    实现ESP32-S3的6个HAL硬件驱动：LCD(GC9A01) + LED(WS2812B) + Encoder(EC11)
+    + Fan(PWM) + Humidifier(GPIO) + Audio(I2S/MAX98357)。
+    白板重建，零行搬运。每写完一个 → idf.py build → 烧录验证 → 下一个。
+
+  context:
+    mcu: "ESP32-S3"
+    framework: "ESP-IDF"
+    build: "idf.py build / idf.py flash"
+    architecture: "core/hal/ → core/protocol/ + core/state/ → modules/"
+    principle: "白板重建，不从reference/ridewind-esp搬运代码"
+    rhythm: "第一圈: 体验原型 — 硬件单独验证"
+
+  hardware_params:
+    lcd: "GC9A01, 2.4寸圆形 240×240, SPI → CS(IO4) DC(IO5) SDA(IO6) SCL(IO7)"
+    encoder: "EC11, 360度20位 → S1(IO17) S2(IO18) KEY(IO8, 拉低触发)"
+    fan: "PWM IO40 (CH2, MOS管调速)"
+    led1: "WS2812B IO41 (6颗, 主灯)"
+    led2: "WS2812B IO16 (3颗, 尾灯)"
+    humidifier: "GPIO IO10 (CH1, MOS管开关)"
+    audio: "MAX98357 I2S → DIN(IO13) BCLK(IO12) LRC(IO11), 44100Hz"
+    ble: "Service 0xFFE0, Char 0xFFE1, 设备名 T1"
+    ble_mtu: "协商至247, 有效载荷244字节"
+    ble_tx: "文本协议, 结尾"
+    task_period: "20ms"
+    cmd_queue_depth: 32
+    logo: "240×240 RGB565, 115200字节"
+    crc32: "多项式 0xEDB88320, 初始 0xFFFFFFFF, 异或 0xFFFFFFFF"
+
+  known_pitfalls:
+    - "坑9: WS2812B时序严格，使用RMT外设或SPI模拟，不用vTaskDelay"
+    - "坑10: GC9A01初始化序列完整，SPI频率≤40MHz，每次命令后延时10ms"
+    - "坑11: EC11编码器抖动，软件消抖延时5ms或RC滤波"
+    - "坑14: 参数变更必须先改hardware-config.md再改代码"
+
+  tasks:
+    - id: B1-0
+      file: "firmware/zcritical-esp/CMakeLists.txt"
+      description: "ESP-IDF 顶层 CMakeLists"
+      status: done
+
+    - id: B1-0b
+      file: "firmware/zcritical-esp/main/CMakeLists.txt"
+      description: "主组件 CMakeLists"
+      status: done
+
+    - id: B1-0c
+      file: "firmware/zcritical-esp/sdkconfig.defaults"
+      description: "SDK默认配置（BLE/ESP32S3/WiFi/SPI模式/PSRAM）"
+      status: done
+
+    - id: B1-0d
+      file: "firmware/zcritical-esp/main/main.c"
+      description: "空壳入口：NVS初始化 + 主循环 + HAL/协议初始化TODO"
+      status: done
+
+    - id: B1-1
+      file: "firmware/zcritical-esp/main/core/hal/hal_gpio.h"
+      description: "通用GPIO封装：读写、中断、上下拉配置"
+      status: done
+      constraints:
+        - "职责单一，不包含业务逻辑"
+        - "有STEER块 + 职责声明"
+
+    - id: B1-2
+      file: "firmware/zcritical-esp/main/core/hal/hal_encoder.h"
+      description: "EC11编码器HAL：方向检测 + 消抖 + 旋转计数"
+      status: done
+
+    - id: B1-3
+      file: "firmware/zcritical-esp/main/core/hal/hal_lcd.h + hal_lcd.c"
+      description: "GC9A01 LCD驱动：SPI初始化序列 + 像素绘制 + 旋转配置"
+      status: todo
+      constraints:
+        - "SPI频率≤40MHz"
+        - "完整初始化序列"
+        - "每命令后延时10ms"
+
+    - id: B1-4
+      file: "firmware/zcritical-esp/main/core/hal/hal_led.h + hal_led.c"
+      description: "WS2812B LED驱动：双灯带(IO41×6 + IO16×3) + 颜色设置"
+      status: todo
+      constraints:
+        - "使用RMT外设，不用vTaskDelay控制时序"
+        - "支持单灯带独立设置"
+        - "支持全局亮度控制"
+
+    - id: B1-5
+      file: "firmware/zcritical-esp/main/core/hal/hal_fan.h + hal_fan.c"
+      description: "风扇PWM驱动：IO40 CH2 + 占空比控制 + 速度映射"
+      status: todo
+
+    - id: B1-6
+      file: "firmware/zcritical-esp/main/core/hal/hal_audio.h + hal_audio.c"
+      description: "I2S音频驱动：MAX98357 + 44100Hz + 双缓冲输出"
+      status: todo
+      constraints:
+        - "双缓冲(ping-pong)防止欠载爆音"
+        - "缓冲区≥2048采样"
+        - "统一44100Hz采样率"
+
+    - id: B1-7
+      file: "firmware/zcritical-esp/main/core/hal/hal_humidifier.h + hal_humidifier.c"
+      description: "加湿器GPIO驱动：IO10 CH1 + MOS管开关"
+      status: todo
+
+  acceptance:
+    - "idf.py set-target esp32s3 成功"
+    - "idf.py build 通过"
+    - "每写完一个 → 烧录验证 → 下一个"
+    - "每文件有STEER块 + C风格职责声明"
+    - "HAL层之间不互相依赖"
+    - "输出合规检查报告"

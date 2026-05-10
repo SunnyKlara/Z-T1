@@ -84,10 +84,11 @@ Z-T1/
   第二阶段：骨架填充 (详细规划见 steering/development-blueprint.md)
 ═══════════════════════════════════════════════════════════════
 
-  Phase 1: APP 骨架 (📍 当前阶段)
-    A1: 应用入口 (Splash + Onboarding + HomeShell + Drawer)
-        产出: 4新文件 + 2修改文件 | 验收: flutter analyze 零错误 + 路由正确
-    A2: 用户中心 (UserCenter + LogoManagement)
+  Phase 1: APP 骨架 (✅ A1 已完成)
+    A1: 应用入口 (Splash + Onboarding + HomeShell + Drawer) ✅ 2026-05-10
+        产出: 6文件 (app_router.dart, app.dart, splash_screen.dart, onboarding_screen.dart, home_shell.dart, drawer_widget.dart)
+        验收: flutter analyze 零错误 + 路由正确 + Navigator→GoRouter迁移完成
+    A2: 用户中心 (UserCenter + LogoManagement) 📍 下一阶段
         产出: 2新文件 | 验收: 可从 Drawer 导航进入 + 界面完整
     A3: BLE 连接层 (BLE Provider + 连接状态管理)
         产出: 3新文件 + 1修改文件 | 验收: 可扫描 + 可连接 + 状态同步

@@ -263,3 +263,38 @@ for (int retry = 0; retry < 10; retry++) {
 ---
 
 *每个坑都对应一个真实 bug，开发时必须对照检查*
+
+---
+
+## 七、路由迁移坑
+
+### 坑 16：GoRouter 迁移遗漏 Navigator 调用
+
+**现象**：APP 已迁移到 GoRouter，但部分页面仍使用 `Navigator.push/pop`，导致路由栈混乱、页面返回异常。
+
+**根因**：迁移时只关注了主要路由跳转（`pushNamed` → `context.go`），遗漏了以下场景：
+- 对话框中的 `Navigator.pop(context)` → 应改为 `context.pop()`
+- 抽屉关闭的 `Navigator.pop(context)` → 应改为 `context.pop()`
+- `Navigator.pushReplacement` → 应改为 `context.go()` 或 `context.replace()`
+- `Navigator.pushNamedAndRemoveUntil` → 应改为 `context.go()`
+
+**解决方案**：
+```dart
+// ❌ 错误：混用 Navigator 和 GoRouter
+Navigator.pop(context);           // 对话框关闭
+Navigator.pushNamed(context, '/'); // 页面跳转
+Navigator.pushReplacementNamed(context, '/home');
+
+// ✅ 正确：统一使用 GoRouter context 扩展方法
+context.pop();                    // 关闭对话框/抽屉
+context.go('/');                  // 页面跳转（清除栈）
+context.replace('/home');         // 替换当前页面
+```
+
+**迁移检查清单**：
+1. 添加 `import 'package:go_router/go_router.dart';`
+2. 全局搜索 `Navigator\.` 确认无遗漏
+3. 特别注意：对话框、SnackBar、Drawer 中的 pop 操作
+4. 测试所有页面跳转和返回路径
+
+**验收**：`grep -r "Navigator\." lib/` 返回 0 结果（除非有特殊场景必须使用）。

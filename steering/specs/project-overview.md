@@ -144,11 +144,9 @@ Z-T1/
 - [x] Colorize Panel
 - [x] RGB Panel
 - [x] HomePageView (4 面板滑动)
-- [ ] Drawer (☰ 菜单)
-- [ ] User Center
-- [ ] Logo Management
-- [ ] Splash + Onboarding
-- [ ] BLE 连接层
+- [x] A1: 应用入口 (路由+Splash+Onboarding+HomeShell+Drawer) — ✅ 2026-05-10
+- [ ] A2: 用户中心 / Logo管理
+- [ ] A3: BLE 连接层
 - [ ] 协议层
 
 ### 固件端 (zcritical-esp, 白板重建)
@@ -212,7 +210,7 @@ zcritical/.kiro/steering/
 │   └── technical-strategy.md         ← 技术策略
 │
 ├── guides/          ← 操作指南
-│   ├── START-HERE.md                 ← 📋 APP 端文档索引入口
+│   ├── START-HERE.md                 ← 📋 APP 端文档索引入口（分层加载策略）
 │   ├── anti-bloat.md                 ← 防臃肿纲领
 │   ├── contract-driven-collaboration.md ← 契约驱动协作
 │   ├── conventions.md                ← 开发约定
@@ -227,6 +225,8 @@ zcritical/.kiro/steering/
 ├── knowledge/       ← 参考知识
 │   ├── technical-risks.md            ← 技术风险
 │   └── ai-efficiency-log.md          ← AI 效率日志
+│
+└── context-quickref.md              ← ⚡ 5秒速查卡（轻量级对话用）
 │
 └── archived/        ← 📦 已归档
     └── protocol-contract.md          ← 协议（引用全局唯一源）
@@ -264,6 +264,50 @@ firmware/zcritical-esp/.kiro/steering/
 | 1 | `reference/RideWind/` | 旧 APP — BLE 协议/Logo 上传/UI 设计/音频流 的设计参考 |
 | 2 | `reference/ridewind-esp/` | 旧固件 — HAL 驱动/UI 状态机/音频引擎/配置参数 的设计参考 |
 | 3 | `reference/README.md` | 📋 矿藏地图 — 按功能索引到具体参考文件 |
+
+### 6.6 Agent Hooks — 自动执法（`.kiro/hooks/`）
+
+> 📌 这些 hooks 将 steering 文档中的软规则变成硬约束。
+> 类型: 自动化配置 | 维护者: AI | 废弃条件: Kiro 不再支持 hooks 时
+
+| # | Hook | 触发 | 对应的规则来源 |
+|---|------|------|--------------|
+| 1 | `session-handoff-enforcer` | agentStop | multi-session §七, conversation-lessons #5 #13 |
+| 2 | `protocol-contract-guardian` | fileEdited: protocol-contract.md | multi-session 铁律1, conversation-lessons #1 |
+| 3 | `architecture-boundary-guard` | preToolUse(write) | anti-bloat 防线2, global-roadmap §五, contract-driven 铁律0 |
+| 4 | `new-session-bootstrap` | promptSubmit | START-HERE, conversation-lessons #5 #13, senior-dev-role |
+| 5 | `git-branch-isolation` | preToolUse(write) | conversation-lessons #7 #8 #9, git-workflow |
+| 6 | `steering-doc-registration` | fileCreated: steering/*.md | conversation-lessons #14 #6, project-overview §八 |
+| 7 | `ui-acceptance-checklist` | preToolUse(write) | ui-review-checklist, ux-guidelines, known-pitfalls #12 #13 |
+
+### 6.6b Kiro Steering 核心宪法（`.kiro/steering/`）
+
+> 📌 `inclusion: auto` — Kiro 每次对话自动注入
+
+| # | 文件 | 用途 | 提炼自 |
+|---|------|------|--------|
+| 1 | `ai-role-charter.md` | AI 身份+职责+行为边界+对话模板 | ai-proactive, senior-dev-role, multi-session, conv-lessons #15 #16 #18 |
+| 2 | `git-safety-charter.md` | 分支开发测试、主干圣洁、文档同步 | git-workflow, conv-lessons #7 #8 #9 |
+
+### 6.6c Kiro Skills — 可复用开发技能（`.kiro/skills/`）
+
+> 📌 Skills 封装高频开发领域的全栈知识和规范，AI 可随时激活
+
+| # | Skill | 用途 | 提炼自 |
+|---|-------|------|--------|
+| 1 | `flutter-app-dev` | Flutter Clean Architecture 全栈开发：架构边界/命名/编码模板/设计令牌/禁止行为 | anti-bloat, conventions, ui-design-tokens, contract-driven, engineering-standards |
+| 2 | `esp32-firmware-dev` | ESP32 固件开发：HAL模板/编码标准/硬件参数/已知陷阱/白板铁律 | architecture(固件), coding-standards-c, known-pitfalls, hardware-config, firmware-workflow |
+
+### 6.7 Kiro SPECs — 结构化任务（`.kiro/specs/`）
+
+> 📌 将 session-handoff.md 中的任务拆为可追踪的 task，Kiro 可逐步引导。
+> 类型: 结构化任务 | 维护者: AI
+
+| # | Spec | 任务数 | 内容 |
+|---|------|--------|------|
+| 1 | `app-phase1-a1-detailed.yml` | 6 tasks (全部done, 6/6) ✅ | APP A1 完整入口: 路由扩展→入口流→Splash→Onboarding→HomeShell→Drawer |
+| 2 | `firmware-phase2-b1-detailed.yml` | 10 tasks (4 done + 6 todo, 4/10) | 固件 B1 HAL: GPIO✅→Encoder✅→LCD⏳→LED⏳→Fan⏳→Audio⏳→Humidifier⏳ |
+| 3 | `architecture-decisions.yml` | 11 tasks (3 done + 8 todo, 3/11) | 架构决策: DR-001✅→DR-002✅→DR-003✅→DR-004~011⏳ |
 
 ---
 
@@ -329,4 +373,4 @@ firmware/zcritical-esp/.kiro/steering/
 
 ---
 
-*创建日期: 2026-05-08 | 修订: 2026-05-09（文档索引重建、7个冲突全部确认并修正、硬件参数全面校正为实际 PCB 配置）*
+*创建日期: 2026-05-08 | 修订: 2026-05-10（文档索引重建、7个冲突全部确认并修正、硬件参数全面校正为实际 PCB 配置、anti-bloat 行数改革、START-HERE 分层加载、context-quickref 速查卡）*

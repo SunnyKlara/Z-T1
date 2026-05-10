@@ -16,11 +16,40 @@
 | 不知道 BLE 消息格式 | 协议格式不确定 | 看 `steering/protocol-contract.md` |
 | 不知道命名风格 | 命名不一致 | 看 `steering/naming-conventions.md` |
 
+## 固件端编译环境
+
+| 项目 | 值 |
+|------|-----|
+| ESP-IDF 安装路径 | `C:\Espressif\frameworks\esp-idf-v5.3.5` |
+| export 脚本 | `C:\Espressif\frameworks\esp-idf-v5.3.5\export.ps1` |
+| idf.py 路径 | `C:\Espressif\frameworks\esp-idf-v5.3.5\tools\idf.py` |
+| Python 环境 | `C:\Espressif\python_env\idf5.3_py3.11_env` |
+| 固件项目路径 | `firmware/zcritical-esp/` |
+
+**进入 ESP-IDF 编译环境的方法**:
+```powershell
+# 方法1: 使用 ESP-IDF CMD/PowerShell 快捷方式（推荐）
+# 开始菜单 → ESP-IDF v5.3.5 → ESP-IDF PowerShell
+
+# 方法2: 手动加载环境
+. C:\Espressif\frameworks\esp-idf-v5.3.5\export.ps1
+cd firmware/zcritical-esp
+idf.py build
+
+# 方法3: 直接用 Python 调用（不需要加载环境）
+cd firmware/zcritical-esp
+python C:\Espressif\frameworks\esp-idf-v5.3.5\tools\idf.py build
+```
+
+**注意**: 方法3 需要确保 Python 虚拟环境已激活，否则会报 `No module named 'click'`。推荐在 ESP-IDF PowerShell 中执行。
+
 ## 固件端常见问题
 
 | 问题 | 可能原因 | 解决方向 |
 |------|---------|---------|
 | `idf.py build` 不通过 | 缺少 STEER 块 | 看 `anti-bloat.md` 防线3 |
+| `idf.py` 命令找不到 | 未进入 ESP-IDF 环境 | 见上方"进入编译环境的方法" |
+| `No module named 'click'` | 未使用 ESP-IDF Python 环境 | 用 ESP-IDF PowerShell 或方法2加载环境 |
 | 文件超过行数上限 | 驱动混杂了渲染 | 看 `anti-bloat.md` 防线1 |
 | 不知道该放 core/ 还是 modules/ | 看是否被多个模块依赖 | core/ = 跨模块共享, modules/ = 单个功能 |
 | 不知道引脚号 | 硬件参数遗忘 | 看 `session-handoff.md` 的硬件参数表 |

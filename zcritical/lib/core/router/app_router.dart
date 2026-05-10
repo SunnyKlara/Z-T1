@@ -25,77 +25,78 @@ abstract final class RoutePaths {
   static const logo = '/logo';
 }
 
-/// 全局 GoRouter 实例。
-///
-/// 路由入口流：Splash → Onboarding → HomeShell
+/// 路由列表 — 供 app.dart 构建 GoRouter 使用。
+final List<RouteBase> appRouterRoutes = [
+  // ── Splash ──
+  GoRoute(
+    path: RoutePaths.splash,
+    pageBuilder: (context, state) => const NoTransitionPage(
+      child: SplashScreen(),
+    ),
+  ),
+  // ── Onboarding ──
+  GoRoute(
+    path: RoutePaths.onboarding,
+    pageBuilder: (context, state) => CustomTransitionPage(
+      key: state.pageKey,
+      child: const OnboardingScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          FadeTransition(opacity: animation, child: child),
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+  ),
+  // ── ShellRoute (HomeShell) ──
+  ShellRoute(
+    pageBuilder: (context, state, child) => NoTransitionPage(
+      child: HomeShell(child: child),
+    ),
+    routes: [
+      GoRoute(
+        path: RoutePaths.home,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: HomeScreen(),
+        ),
+      ),
+    ],
+  ),
+  // ── 用户中心 ──
+  GoRoute(
+    path: RoutePaths.userCenter,
+    pageBuilder: (context, state) => CustomTransitionPage(
+      key: state.pageKey,
+      child: const UserCenterScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+            child: child,
+          ),
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+  ),
+  // ── Logo 管理 ──
+  GoRoute(
+    path: RoutePaths.logo,
+    pageBuilder: (context, state) => CustomTransitionPage(
+      key: state.pageKey,
+      child: const LogoManagementScreen(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
+            child: child,
+          ),
+      transitionDuration: const Duration(milliseconds: 300),
+    ),
+  ),
+];
+
+/// 全局 GoRouter 实例（备用，如果不需要动态初始位置）。
 final appRouter = GoRouter(
   initialLocation: RoutePaths.splash,
-  routes: [
-    // ── Splash ──
-    GoRoute(
-      path: RoutePaths.splash,
-      pageBuilder: (context, state) => const NoTransitionPage(
-        child: SplashScreen(),
-      ),
-    ),
-    // ── Onboarding ──
-    GoRoute(
-      path: RoutePaths.onboarding,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const OnboardingScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            FadeTransition(opacity: animation, child: child),
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    ),
-    // ── ShellRoute (HomeShell) ──
-    ShellRoute(
-      pageBuilder: (context, state, child) => NoTransitionPage(
-        child: HomeShell(child: child),
-      ),
-      routes: [
-        GoRoute(
-          path: RoutePaths.home,
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: HomeScreen(),
-          ),
-        ),
-      ],
-    ),
-    // ── 用户中心 ──
-    GoRoute(
-      path: RoutePaths.userCenter,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const UserCenterScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-              child: child,
-            ),
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    ),
-    // ── Logo 管理 ──
-    GoRoute(
-      path: RoutePaths.logo,
-      pageBuilder: (context, state) => CustomTransitionPage(
-        key: state.pageKey,
-        child: const LogoManagementScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-            SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(1, 0),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOut)),
-              child: child,
-            ),
-        transitionDuration: const Duration(milliseconds: 300),
-      ),
-    ),
-  ],
+  routes: appRouterRoutes,
 );

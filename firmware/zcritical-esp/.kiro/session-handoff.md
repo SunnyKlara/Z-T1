@@ -30,7 +30,7 @@
 
 ```c
 /* ═══════════════════════════════════════════════════════════════
- * STEER: 反臃肿 | max_lines=150 | scope=firmware
+ * STEER: 反臃肿 | scope=firmware | 修改前读 anti-bloat.md
  *
  * 职责: ESP32 固件入口 — 硬件初始化 + 主任务创建
  * 不做什么: 不包含命令分发（proto_dispatch.c）、不包含 Logo 上传（modules/logo/）
@@ -134,7 +134,7 @@ CONFIG_SPIRAM_USE_CAPS_ALLOC=y
 ```
 目标: 6个 HAL 驱动全部实现
 顺序: gpio → pwm → led → lcd → encoder → audio
-每文件 ≤300行
+每文件参考 ~300 行，职责单一优先
 每写完一个 → idf.py build → 烧录验证 → 下一个
 ```
 

@@ -72,7 +72,7 @@ core/hal/  →  （仅依赖 ESP-IDF SDK）
 | `hal_encoder.c` | EC11 编码器 | `encoder_poll()` → delta |
 | `hal_audio.c` | I2S MAX98357 | `audio_output(pcm, len)` |
 
-每文件 ≤ 300行。
+每文件参考 ~300 行，职责单一优先。
 
 ---
 
@@ -133,12 +133,11 @@ BLE 回调 (Core 0)
 
 ---
 
-## 六、硬约束
+## 六、核心约束
 
 | 约束 | 说明 |
 |------|------|
-| 每文件 ≤ 300行 (HAL) / 400行 (modules) | 硬限制 |
-| main.c ≤ 150行 | 只做初始化和任务创建 |
+| 行数参考值 | HAL ~300行 / modules ~400行 / main.c ~150行。**职责单一 > 行数**。逻辑清晰的500行好过强行拆分的3个碎片 |
 | 零行搬运 | 不从 reference 复制代码 |
 | 协议不可变 | BLE 命令格式与 reference 一致 |
 | 编译验证 | 每步 idf.py build 必须通过 |

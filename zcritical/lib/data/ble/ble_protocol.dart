@@ -158,7 +158,7 @@ abstract final class BleResponses {
 extension BleCharacteristicExt on BluetoothCharacteristic {
   /// 发送文本命令（自动加 \n）。
   Future<void> sendCommand(String command) async {
-    final bytes = '${command}\n'.codeUnits;
+    final bytes = '$command\n'.codeUnits;
     await write(bytes, withoutResponse: true);
   }
 }

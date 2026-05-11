@@ -1,184 +1,117 @@
-# ⚠️ 固件端开发流程规范
+# 固件端 — 构建流程指南
 
-> **优先级**: CRITICAL — 和 APP 端同样的契约驱动模式
-> **作用域**: 固件端 — 所有 C 代码改动遵循此流程
-> **对标**: zcritical/.kiro/steering/contract-driven-collaboration.md
-
----
-
-## 一、核心理念：先定接口，再写实现
-
-```
-嵌入式 C 代码最怕的：
-  ❌ "先写着试试" → 函数签名不对 → 调用方全得改
-  ❌ "这里加个全局变量" → 其他地方不知道 → 竞态 Bug
-  ❌ "这个 case 我直接塞 main.c" → 一路膨胀到 893 行
-  
-固件开发同样需要设计契约：
-  不是"写完再改"，而是"确认再写"。
-```
+> **优先级**: CRITICAL — 每次对话必须能独立构建
+> **维护者**: AI
 
 ---
 
-## 二、三层开发流程
+## 一、环境要求
 
-### 第一层：功能契约
+| 软件 | 版本 | 安装路径 |
+|------|------|---------|
+| ESP-IDF | v5.3.5 | `C:\Espressif\frameworks\esp-idf-v5.3.5` |
+| Python | 3.11 | `C:\Espressif\python_env\idf5.3_py3.11_env` |
+| Git | 2.44+ | `C:\Espressif\tools\idf-git` |
 
-用结构化模板描述需求：
+### Windows 环境变量
 
-```yaml
-Feature: 新增 BLE 命令 START_LIGHT
+每次构建前必须激活 ESP-IDF 环境：
 
-Data:
-  - light_mode: uint8_t, 0-2 (0=off, 1=manual, 2=auto)
-  - light_brightness: uint8_t, 0-100
+```powershell
+# 方法 1: 使用构建脚本（推荐）
+.\build_fw.ps1 full          # set-target + build
+.\build_fw.ps1 build        # 仅 build
+.\build_fw.ps1 flash        # 仅烧录
+.\build_fw.ps1 monitor      # 仅监控
+.\build_fw.ps1 build-flash  # build + 烧录
+.\build_fw.ps1 all          # build + 烧录 + 监控
 
-Actions:
-  - set_light_mode(uint8_t mode) → OK:START_LIGHT / ERR:START_LIGHT:reason
-  - get_light_mode() → 返回当前模式
-
-Protocol:
-  - 命令: START_LIGHT:mode:brightness\n
-  - 响应: OK:START_LIGHT\r\n
-  - 查询: GET:START_LIGHT → START_LIGHT_REPORT:mode:brightness\r\n
-
-Affected files:
-  - 新增 cmd_type_t 枚举值: CMD_START_LIGHT, CMD_GET_START_LIGHT
-  - protocol.c: 新增解析 case
-  - main.c (或 command_dispatch.c): 新增 dispatch case
-  - app_state.h: 可选新增字段
-
-Constraints:
-  - 不改变已有命令格式
-  - 必须先更新 protocol-contract.md
+# 方法 2: 手动激活环境
+cd C:\Espressif\frameworks\esp-idf-v5.3.5
+.\export.ps1
+idf.py build
+idf.py flash
+idf.py monitor
 ```
 
-### 第二层：设计契约
-
-AI 输出具体的技术方案：
-
-```
-【技术方案】
-
-1. protocol.h - 新增枚举
-   typedef enum {
-       // ... existing ...
-       CMD_START_LIGHT,      // START_LIGHT:mode:brightness
-       CMD_GET_START_LIGHT,  // GET:START_LIGHT
-   } cmd_type_t;
-
-   新增 param union 字段（如需要）
-
-2. protocol.c - 新增解析
-   在 parse_command() 中添加:
-   - 匹配 "START_LIGHT:%d:%d" → cmd.type = CMD_START_LIGHT
-   - 匹配 "GET:START_LIGHT" → cmd.type = CMD_GET_START_LIGHT
-
-3. command_dispatch.c - 新增处理
-   case CMD_START_LIGHT:
-       if (mode > 2) { ble_notify_err("START_LIGHT:INVALID_MODE"); break; }
-       g_app_state.light_mode = mode;
-       g_app_state.light_brightness = brightness;
-       if (mode == 1) apply_manual_brightness(brightness);
-       if (mode == 2) start_auto_light();
-       ble_notify("OK:START_LIGHT");
-       break;
-
-4. app_state.h - 新增字段
-   // ══ 灯光 ══  (上限: 5个字段)
-   uint8_t light_mode;       // 0=off, 1=manual, 2=auto
-   uint8_t light_brightness; // 0-100
-
-5. steering/protocol-contract.md - 新增命令定义
-
-文件影响:
-  修改: protocol.h (+3行), protocol.c (+10行), command_dispatch.c (+25行)
-  修改: app_state.h (+2字段)
-  修改: steering/protocol-contract.md (+5行)
-  预估总量: ~45行，不超任何文件的限制
-
-确认？
-```
-
-### 第三层：实现
-
-按契约写代码 → 编译通过 → 检查行数 → 提交。
-
----
-
-## 三、固件端对应的"新功能三步走"
-
-### 和 APP 端防臃肿纲领第 4 条一致：
-
-```
-Q1: 这个功能属于哪个域？
-    (风扇/PWM / 加湿器 / LED / 速度 / UI / 音频 / Logo / BLE / WiFi / 存储 / ...)
-
-Q2: 这个域对应的文件在哪？
-    (列出具体 .c 文件路径)
-
-Q3: 现有文件能容纳吗？
-    - 职责匹配吗？（检查文件头部的"不做什么"）
-    - 加了之后行数还在限制以内吗？
-    → 任何一个答案是"否"，新建文件
-```
-
----
-
-## 四、编译验证铁律
-
-**每一层写完必须编译通过才能进入下一层。**
+### Linux/macOS
 
 ```bash
-# 固件编译验证
+. $HOME/esp/esp-idf-v5.3.5/export.sh
 idf.py build
-
-# 如果失败 → 不继续下一步
-# 如果通过 → 进入下一层
-```
-
-和 APP 端的 `flutter analyze` 对应。
-
----
-
-## 五、协议变更流程
-
-```
-1. 先更新 steering/protocol-contract.md
-   → 添加新命令定义
-   → 标注 (PENDING: 固件已实现, APP待实现) 或 (PENDING: 固件待实现, APP已实现)
-
-2. 固件端实现
-   → protocol.h: 新增枚举
-   → protocol.c: 新增解析
-   → command_dispatch.c: 新增 dispatch case
-   → 编译验证
-
-3. 更新 UX 测试大纲
-   → 在对应章节添加新命令的测试用例
-
-4. 更新 protocol-contract.md
-   → 将 PENDING 改为对应状态
 ```
 
 ---
 
-## 六、提交规范
+## 二、构建命令速查
 
-```
-提交格式:
-  feat(fw): 做什么
-  fix(fw): 修什么
-  refactor(fw): 重构什么
-
-示例:
-  feat(fw): add START_LIGHT command
-  fix(fw): encoder rotation direction reversal bug
-  refactor(fw): split main.c into dispatch + logo_receiver
-```
-
-每次提交只做一件事。
+| 命令 | 说明 | 预期时间 |
+|------|------|---------|
+| `.\build_fw.ps1 full` | 首次：set-target + 编译 | ~3-5 min |
+| `.\build_fw.ps1 build` | 增量编译 | ~30-60s |
+| `.\build_fw.ps1 flash` | 烧录 | ~10s |
+| `.\build_fw.ps1 monitor` | 串口监控 | — |
+| `.\build_fw.ps1 clean` | 清理构建产物 | — |
+| `.\build_fw.ps1 build-flash` | 编译 + 烧录 | ~1 min |
 
 ---
 
-*创建日期: 2026-05-08*
+## 三、首次构建流程
+
+```
+1. 打开 PowerShell，进入项目根目录
+2. 运行: .\build_fw.ps1 full
+3. 等待编译完成（零错误零警告）
+4. 运行: .\build_fw.ps1 flash    (烧录)
+5. 运行: .\build_fw.ps1 monitor  (监控日志)
+6. 用手机 BLE 扫描，确认设备名 "T1" 出现
+```
+
+---
+
+## 四、常见问题
+
+### idf.py 找不到
+
+**原因**: 未激活 ESP-IDF 环境。
+**解决**: 必须先运行 `.\build_fw.ps1`（脚本内已自动激活）。
+
+### partitions.csv 找不到
+
+**原因**: `sdkconfig.defaults` 引用了 `partitions.csv`，但文件不存在。
+**解决**: `build_fw.ps1` 会自动从 `reference/ridewind-esp/partitions.csv` 复制。
+
+### BLE 广播看不到 "T1"
+
+**排查步骤**:
+1. 检查串口日志是否有 "Advertising started"
+2. 检查 BLE 参数（Service UUID 0xFFE0, Char UUID 0xFFE1）
+3. 检查手机 BLE 扫描 App 是否支持 BLE 4.2
+
+---
+
+## 五、构建产物
+
+```
+firmware/zcritical-esp/build/
+├── zcritical-esp.bin    <- 主固件
+├── bootloader/          <- 引导程序
+├── partition_table/     <- 分区表
+└── esp-idf/             <- IDF 库
+```
+
+---
+
+## 六、AI 构建检查清单
+
+每次 `idf.py build` 后检查：
+
+- [ ] 零 Error（必须）
+- [ ] 零 Warning（必须）
+- [ ] 输出包含 `zcritical-esp.bin`
+- [ ] 输出包含 `bootloader/bootloader.bin`
+- [ ] BUILD SUCCESSFUL
+
+---
+
+*创建: 2026-05-11*

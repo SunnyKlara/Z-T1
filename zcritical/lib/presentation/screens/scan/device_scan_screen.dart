@@ -1,32 +1,37 @@
 // ══════════════════════════════════════════════════════════════
-// STEER: 反臃肿 | scope=app | 修改前读 anti-bloat.md
+// STEER: 反臃肿 | scope=app
 //
-// 职责: 设备扫描页（APP启动首页）
-//       声波动画 → 5s弹窗（含3D风洞模型）→ 背景模糊 → 进入主页
-// 不做什么: 不实现真实BLE扫描（data层未完成）
+// 职责: 设备扫描页 — 声波动画 → BLE扫描 → 发现设备弹窗 → 进入主页
+//       基于RideWind BLEService重写
 // ══════════════════════════════════════════════════════════════
 
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:go_router/go_router.dart';
-import '../../providers/ble/ble_connection_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../../../data/ble/ble_service.dart';
 import '../../widgets/wind_tunnel_view.dart';
 
-class DeviceScanScreen extends ConsumerStatefulWidget {
+class DeviceScanScreen extends StatefulWidget {
   const DeviceScanScreen({super.key});
 
   @override
-  ConsumerState<DeviceScanScreen> createState() => _DeviceScanScreenState();
+  State<DeviceScanScreen> createState() => _DeviceScanScreenState();
 }
 
-class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
+class _DeviceScanScreenState extends State<DeviceScanScreen>
     with TickerProviderStateMixin {
-  String _statusText = '扫描中...';
+  final BleService _bleService = BleService();
   bool _showDialog = false;
-  Timer? _demoTimer;
+  bool _isScanning = false;
+  bool _isConnecting = false;
+  List<ScanResult> _devices = [];
+  ScanResult? _selectedDevice;
+  String? _errorMessage;
 
   // 弹窗动画
   late final AnimationController _blurController;
@@ -34,9 +39,8 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
   late final Animation<double> _blurAnimation;
   late final Animation<Offset> _slideAnimation;
 
-  static const _mockDevices = [
-    _MockDevice(id: 'T1-001', name: 'T1', rssi: -45),
-  ];
+  StreamSubscription? _scanSub;
+  StreamSubscription? _connSub;
 
   @override
   void initState() {
@@ -58,46 +62,110 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
 
-    _startDemoSequence();
+    _startScan();
   }
 
-  void _startDemoSequence() {
-    setState(() => _statusText = '扫描中...');
-
-    // 1.5s 后弹窗
-    _demoTimer = Timer(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        setState(() => _showDialog = true);
-        _slideController.forward();
-        _blurController.forward();
+  Future<void> _startScan() async {
+    // Android: 请求位置权限（MIUI 即使 Android 12+ 也需要）
+    if (Platform.isAndroid) {
+      final status = await Permission.location.request();
+      if (!status.isGranted) {
+        setState(() => _errorMessage = '需要位置权限才能扫描');
+        return;
       }
+    }
+
+    setState(() {
+      _isScanning = true;
+      _errorMessage = null;
     });
+
+    try {
+      final results = await _bleService.scanDevices(
+        timeout: const Duration(seconds: 10),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _devices = results;
+        _isScanning = false;
+      });
+
+      if (results.isNotEmpty) {
+        _showDeviceDialog(results.first);
+      } else {
+        setState(() => _errorMessage = '未找到设备');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isScanning = false;
+        _errorMessage = '扫描失败，重试';
+      });
+    }
   }
 
-  void _autoConnect() {
-    final device = _mockDevices[0];
-    ref.read(connectionStateProvider.notifier).connect(device.id, device.name);
-    ref.read(connectionStateProvider.notifier).onConnected(device.id, device.name);
-    ref.read(connectedDeviceProvider.notifier).state = ConnectedDevice(
-      id: device.id,
-      name: device.name,
-    );
-    context.go('/home');
+  void _showDeviceDialog(ScanResult result) {
+    setState(() {
+      _selectedDevice = result;
+      _showDialog = true;
+    });
+    _slideController.forward();
+    _blurController.forward();
   }
 
-  void _manualConnect() {
-    _demoTimer?.cancel();
-    _autoConnect();
+  Future<void> _connectToDevice() async {
+    final device = _selectedDevice;
+    debugPrint('🔹 [SCAN] _connectToDevice 调用: device=$device');
+    if (device == null) {
+      debugPrint('🔹 [SCAN] _selectedDevice 为 null，退出');
+      return;
+    }
+
+    // Android 12+: 先检查权限状态，再请求
+    if (Platform.isAndroid) {
+      final status = await Permission.bluetoothConnect.status;
+      debugPrint('🔹 [SCAN] bluetoothConnect status=$status');
+      if (!status.isGranted) {
+        final result = await Permission.bluetoothConnect.request();
+        debugPrint('🔹 [SCAN] bluetoothConnect request result=$result');
+        if (!result.isGranted) {
+          setState(() => _errorMessage = '请在设置中开启蓝牙连接权限');
+          return;
+        }
+      }
+    }
+
+    setState(() {
+      _isConnecting = true;
+      _errorMessage = null;
+    });
+
+    debugPrint('🔹 [SCAN] 调用 _bleService.connect()...');
+    final success = await _bleService.connect(device.device);
+    debugPrint('🔹 [SCAN] _bleService.connect() 返回: $success');
+
+    if (!mounted) return;
+
+    if (success) {
+      context.go('/home');
+    } else {
+      setState(() {
+        _isConnecting = false;
+        _errorMessage = '连接失败，请重试';
+      });
+    }
   }
 
   void _skipToHome() {
-    _demoTimer?.cancel();
     context.go('/home');
   }
 
   @override
   void dispose() {
-    _demoTimer?.cancel();
+    _scanSub?.cancel();
+    _connSub?.cancel();
     _blurController.dispose();
     _slideController.dispose();
     super.dispose();
@@ -109,7 +177,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // 扫描背景层（弹窗后模糊渐隐）
+          // 扫描背景层
           AnimatedBuilder(
             animation: _blurAnimation,
             builder: (_, child) {
@@ -122,14 +190,14 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
             child: _buildScanningUI(),
           ),
 
-          // 弹窗覆盖层（背景变暗）
+          // 弹窗覆盖层
           if (_showDialog)
             AnimatedBuilder(
               animation: _blurAnimation,
               builder: (_, __) => Container(color: Colors.black.withAlpha((_blurAnimation.value * 180).round())),
             ),
 
-          // 发现设备弹窗（从下方滑入）
+          // 发现设备弹窗
           if (_showDialog)
             SlideTransition(
               position: _slideAnimation,
@@ -140,6 +208,13 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
     );
   }
 
+  String _getStatusText() {
+    if (_isConnecting) return '连接中...';
+    if (_isScanning) return '扫描中...';
+    if (_errorMessage != null) return _errorMessage!;
+    return '扫描中...';
+  }
+
   Widget _buildScanningUI() {
     return SafeArea(
       child: Padding(
@@ -147,7 +222,7 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_statusText, style: const TextStyle(
+            Text(_getStatusText(), style: const TextStyle(
               color: Colors.white, fontSize: 36, fontWeight: FontWeight.w400,
             )),
             const SizedBox(height: 8),
@@ -167,14 +242,14 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
               ),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _manualConnect,
+                  onPressed: () => _startScan(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: const Color(0xFF00D68F),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(29)),
+                    elevation: 0,
                   ),
-                  child: const Text('立即连接', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('重新扫描', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
             ]),
@@ -186,6 +261,10 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
   }
 
   Widget _buildFoundDialog() {
+    final device = _selectedDevice;
+    final name = device?.device.platformName ?? 'T1';
+    final rssi = device?.rssi ?? 0;
+
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
@@ -205,31 +284,25 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
                   color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold,
                 )),
                 const SizedBox(height: 8),
-                const Text('T1', style: TextStyle(color: Colors.white70, fontSize: 18)),
+                Text(name, style: const TextStyle(color: Colors.white70, fontSize: 18)),
                 const SizedBox(height: 4),
-                const Text('信号强度: -45 dBm', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                Text('信号强度: $rssi dBm', style: const TextStyle(color: Colors.white54, fontSize: 14)),
                 const SizedBox(height: 20),
-
-                // 3D 风洞模型（代码绘制）
-                const SizedBox(
-                  height: 200,
-                  child: WindTunnelView(),
-                ),
-
+                const SizedBox(height: 200, child: WindTunnelView()),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: 320, height: 58,
                   child: ElevatedButton(
-                    onPressed: _manualConnect,
+                    onPressed: _isConnecting ? null : _connectToDevice,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF00D68F),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(29)),
                       elevation: 0,
                     ),
-                    child: const Text('进入控制界面', style: TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w600,
-                    )),
+                    child: Text(_isConnecting ? '连接中...' : '进入控制界面',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -242,21 +315,13 @@ class _DeviceScanScreenState extends ConsumerState<DeviceScanScreen>
   }
 }
 
-class _MockDevice {
-  final String id;
-  final String name;
-  final int rssi;
-  const _MockDevice({required this.id, required this.name, required this.rssi});
-}
-
 // ══════════════════════════════════════════════════════════════
-// SoundWaveScanner — 直接复刻 RideWind
+// 声波动画（不变）
 // ══════════════════════════════════════════════════════════════
 
 class SoundWaveScanner extends StatefulWidget {
   final double width;
   final double height;
-
   const SoundWaveScanner({super.key, this.width = 280, this.height = 200});
 
   @override

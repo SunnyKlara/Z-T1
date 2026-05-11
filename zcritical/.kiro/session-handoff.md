@@ -1,4 +1,4 @@
-# APP端 - 会话交接 (2026-05-09)
+# APP端 - 会话交接 (2026-05-11)
 
 ## 硬事实
 
@@ -7,53 +7,44 @@
 
 ## 当前状态
 
-Phase 1 APP骨架 (A1+A2+A3) 全部完成。flutter analyze 零错误。
-代码在 `app/a3-ble-connect` 分支，未合入 main（需实机验证后合并）。
+Phase 1 APP骨架 (A1+A2+A3) 全部完成。**BLE 连接已验证成功** ✅
 
-## 已完成
+### BLE 连接链路（全通）
 
-**APP 端 UI (7页面)**:
-- SplashScreen + OnboardingScreen (品牌Logo + 3页引导)
-- HomeShell (GoRouter ShellRoute + BLE Banner + 右上角菜单按钮 + Drawer)
-- HomeScreen (风洞视图 + 4面板 PageView)
-- UserCenterScreen (分区标题 + icon tile列表)
-- LogoManagementScreen (Logo槽位 + 上传引导)
-- 路由: /splash -> /onboarding -> / -> /user-center -> /logo
+物理连接 → MTU=247 → 连接优先级=high → discoverServices(3服务) → FFE0/FFE1 匹配 → setNotifyValue → **连接完成 → 进入主页** ✅
 
-**Provider 层 (骨架阶段，Mock状态)**:
-- ble_status_provider (BLE适配器状态)
-- ble_scan_provider (扫描状态 + 设备列表)
-- ble_connection_provider (连接状态管理)
-- BleConnectionBanner (顶部4色状态提示条)
+服务清单: `1801`(GAP), `1800`(GATT), `ffe0`(自定义, char=`ffe1` write+notify)
 
-**Domain 层**:
-- DeviceConnectionState 枚举
-- Device 模型
+### 性能优化（2026-05-11）
 
-**已完成面板 (不要动)**:
-- pace_panel.dart (236行)
-- running_panel.dart (359行)
-- colorize_panel.dart (315行)
-- rgb_panel.dart (345行)
-- home_page_view.dart (33行)
+| 优化项 | 效果 |
+|--------|------|
+| 扫描早停（发现 T1 立即停止） | 扫描从 ~12s → ~2-3s |
+| MTU 跳过（检测已达标不二次协商） | 连接从 ~1.4s → ~1.1s |
+| UUID 防御性处理（length>=8 判断+try/catch） | 消灭 RangeError 崩溃 |
 
-## 文档体系
+### 历史修复（已解决，保留记录）
 
-- steering/decisions/: 3篇技术决策 (DR-001 BLE / DR-002 音频 / DR-003 LVGL)
-- steering/roadmap/development-rhythm.md: 四圈迭代模型
-- steering/specs/product-requirements-audit.md: 功能审计(P0-P9)
+- `flutter_blue_plus 1.35.2`: `device.discoverServices()` 替代废弃的 `device.services`
+- `device_scan_screen.dart`: 对接真实 BLE 扫描 + 声波动画
+- 固件广播: `include_name=true`，设备名 "T1" 在广播包中
+- 权限: Android `BLUETOOTH_CONNECT` 运行时请求（MIUI 必须）
+- UUID 短格式: ESP32 返回 4 字符 UUID（如 `1800`），substring 越界已防御
 
-## 下一步: 第一圈 - 体验原型
+代码在 `app/a3-ble-connect` 分支，未合入 main。
 
-按 development-rhythm.md 进入第一圈。
-任务: 补齐APP端UI原型 + 固件端硬件基础验证。
-用Mock数据驱动，不涉及BLE真实通信。
+## 开发经验文档
+
+已记录 → `steering/knowledge/ble-dev-experience.md`（5 个坑 + 调试方法论 + 架构要点）
+
+## 下一步
+
+BLE 连接已打通。下一步按用户指示走：命令收发验证、UI 面板对接真实数据、或固件端精装。
 
 ## Git 分支
 
 ```
 main
   app/a1-a2-entry-usercenter (已合并)
-  app/a3-ble-connect (当前, 有未提交文档改动)
-  firmware/b1-hal (固件端, 待开始)
+  app/a3-ble-connect (当前)
 ```

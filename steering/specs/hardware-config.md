@@ -122,6 +122,7 @@
 | IO5 | LCD DC | 数据/命令选择 |
 | IO6 | LCD SDA | SPI 数据 |
 | IO7 | LCD SCL | SPI 时钟 |
+| IO9 | LCD BLK | 背光控制，高电平亮 |
 | IO8 | 编码器 KEY | 按键，拉低触发 |
 | IO10 | 加湿器 CH1 | MOS管开关 |
 | IO11 | 音频 LRC | I2S 左右时钟 |

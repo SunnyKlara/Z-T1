@@ -85,3 +85,50 @@ B0 ✅ BLE广播 | B1 ✅ 6 HAL | B2 ✅ 状态+协议 | B3 ✅ 7模块骨架
   - Bright: 百分比 + 进度条 + 4 快捷值
   - Menu: 3×3 图标网格（FAN/LED/BRT/HUM/THR/LCD/LOGO/WIFI/INFO）
   - Logo/Treadmill: 占位
+
+
+---
+
+## UI 设计方案评估分支（2026-05-12 起）
+
+**新分支**: `ui/lvgl-demo`（从 `app/a3-ble-connect` 切出，未提交代码）
+
+**目的**: 评估 LVGL vs RideWind 贴图法两种 UI 方案，烧录看效果再决定。
+
+**已分析**:
+- RideWind UI 像素级布局（7 屏 + 共享背景图 + 53px 大数字 + 8帧滑动动画）已记录
+- 两种方案对比已写在对话历史
+- 三选项: A 像素复刻 RideWind / B LVGL 矢量重做 / C 全新设计
+
+**下一步**: 在 `ui/lvgl-demo` 分支集成 LVGL + esp_lvgl_port + 复刻 1 个菜单页面，烧录验证视觉效果。
+
+---
+
+## 文档体系审计（2026-05-12）
+
+**无代码变更**。对文档管理体系做了全面审查，产出分析报告（在对话历史中）。
+
+**发现的关键问题**:
+1. APP 端 17 个 steering 文件存在大量重叠（AI角色×3、行数限制×3、开发流程×3）
+2. 固件端 anti-bloat.md 引用 RideWind 旧目录结构，与实际 core+modules 架构不符
+3. 行数限制规则在多文件间矛盾（300 vs 350，硬限制 vs 参考值）
+4. APP 端 architecture-map 是规划态，与实际代码量不匹配
+
+**建议的下一步**:
+- APP 端 17 文件合并为 5-6 个，消除重复
+- 固件端 anti-bloat 用当前架构重写
+- 统一矛盾规则（以 conversation-lessons 教训3 为准：职责单一 > 行数）
+
+---
+
+## 文档模式提炼（2026-05-12）
+
+**新增文件**: `steering/knowledge/documentation-patterns.md`
+
+从 ZCritical 实战中提炼出完整的 AI 协作操作系统，覆盖 4 大子系统、18 个可复用模式：
+1. 知识管理（5 模式）：唯一入口、Session Handoff、唯一真值源、知识传承、能力边界
+2. AI 协作模式（5 模式）：角色定位、契约驱动、沟通模板、产品思维注入、争议义务
+3. 质量保障（5 模式）：架构边界、跨端同步、失败考古、命名统一、防腐烂
+4. 自动化守护（3 模式）：IDE Hooks、构建脚本、文档演化机制
+
+已注册到 `steering/specs/project-overview.md` 索引。
